@@ -1,0 +1,91 @@
+# The joint state controller handles publishing transforms for any moving joints
+# namespace must be same as used in URDF e.g here it is 'igor'
+
+igor:
+## For Diff drive controller only
+#  gazebo_ros_control/pid_gains:
+#   L_wheel_joint: {p: 0.5, i: 0.0, d: 0.0}
+#   R_wheel_joint: {p: 0.5, i: 0.0, d: 0.0}
+
+
+# Publish all joint states -----------------------------------
+
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 2000
+
+  #Effort controllers
+  L_hfe_joint_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: L_hfe_joint
+    pid: {p: 1000.0, i: 10.0, d: 15.0}
+
+  L_kfe_joint_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: L_kfe_joint
+    pid: {p: 120.0, i: 0.0, d: 45.0}
+
+  L_kfe_joint_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: L_kfe_joint
+    pid: {p: 200.0, i: 0.0, d: 0.0}
+
+  R_hfe_joint_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: R_hfe_joint
+    pid: {p: 1000.0, i: 10.0, d: 15.0}
+
+  R_kfe_joint_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: R_kfe_joint
+    pid: {p: 120.0, i: 0.0, d: 45.0}
+
+  R_kfe_joint_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: R_kfe_joint
+    pid: {p: 200.0, i: 0.0, d: 0.0}
+
+  R_wheel_joint_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: R_wheel_joint
+    pid: {p: 200.0, i: 0.0, d: 1.0}
+  
+  L_wheel_joint_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: L_wheel_joint
+    pid: {p: 200.0, i: 0.0, d: 1.0}
+
+  diff_drive_controller:
+    type        : diff_drive_controller/DiffDriveController
+    left_wheel  : 'L_wheel_joint'
+    right_wheel : 'R_wheel_joint'
+
+    publish_rate: 1000.0
+    cmd_vel_timeout: 1.0
+    wheel_separation : 0.50
+    wheel_radius : 0.1016
+    pose_covariance_diagonal : [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
+    twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
+
+# tf
+#  enable_odom_tf: true
+    base_frame_id: base_link
+    odom_frame_id: odom
+
+  # limits
+    linear:
+      x:
+        has_velocity_limits    : true
+        max_velocity           :  10 # m/s
+        min_velocity           : -10 # m/s
+        has_acceleration_limits: true
+        max_acceleration       :  10.0 # m/s^2
+        min_acceleration       : -10.0 # m/s^2
+    angular:
+      z:
+        has_velocity_limits    : true
+        max_velocity           :  1.5 # rad/s
+        min_velocity           : -1.5 # rad/s
+        has_acceleration_limits: true
+        max_acceleration       :  1.0  # rad/s^2
+        min_acceleration       : -1.0 # rad/s^2

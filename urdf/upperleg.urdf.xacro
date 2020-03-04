@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="upperLeg">
+
+	<xacro:macro name="upperLeg" params="prefix reflect flip *joint_pose">
+
+
+		<link name="${prefix}_upperleg">
+			<visual>
+				<origin rpy="${-M_PI/2} ${M_PI/2} ${flip*M_PI}" xyz="${reflect*2*upper_leg_radius} ${reflect*-3*upper_leg_radius} ${1.5*upper_leg_radius}"/>
+				<geometry>
+					<mesh filename="package://igor/meshes/upperLeg.STL" scale="0.001 0.001 0.001"/>
+					<!--cylinder radius="0.015875" length="0.35" /-->	
+		      		</geometry>
+		      		<material name="white">
+					<color rgba="1.0 1.0 1.0 1.0"/>
+		      		</material>
+		    	</visual>
+
+			<collision>
+				<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -${upper_leg_length/2}"/>
+				<geometry>
+					<cylinder radius="${upper_leg_radius}" length="${upper_leg_length}" />	
+		      		</geometry>
+		    	</collision>
+
+
+	    		<inertial>
+				<origin rpy="${0} ${0} ${0}" xyz="${0} ${0} ${-upper_leg_length/2}"/>
+	      			<mass value="0.22"/>
+	      			<inertia ixx="0.00226" ixy="0.0" ixz="0.0" iyy="0.00226" iyz="0.0" izz="4.6E-05"/>
+	    		</inertial> 
+	    	</link>
+
+		
+		<joint name="${prefix}_hfe_joint" type="revolute">
+			<xacro:insert_block name="joint_pose"/>
+			<parent link="${prefix}_baseActuator"/>
+			<child  link="${prefix}_upperleg"/>
+			<limit effort="${15}" lower="-2" upper="2" velocity="10"/>
+			<axis xyz="0 1 0"/>
+			<dynamics damping="0.1"/>
+		</joint>
+
+		<transmission name="${prefix}_hfe_trans">
+	      		<type>transmission_interface/SimpleTransmission</type>
+	      		<actuator name="${prefix}_hfe_motor">
+				<mechanicalReduction>1</mechanicalReduction>
+	      		</actuator>
+	      		<joint name="${prefix}_hfe_joint">
+				<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+	      		</joint>
+	    	</transmission>
+
+
+    		<gazebo reference="${prefix}_upperleg">
+	      		<mu1 value="1.0"/>
+	      		<mu2 value="1.0"/>
+	      		<kp value="10000.0" />
+	      		<kd value="10000.0" />
+	      		<material>Gazebo/White</material>
+    		</gazebo>
+
+
+
+			<!-- IMU Sensor -->
+
+
+		<!-- imu_link for getting data in imu frame -->
+	    	<!--link name="${prefix}_upperLeg_imu_link"/>
+
+		<joint name="${prefix}_upperLeg_imu_link_to_${prefix}_upperleg" type="fixed">
+			<origin xyz="0 0 -${upper_leg_length/2}" rpy="0 0 0" />
+			<parent link="${prefix}_upperleg" />
+			<child link="${prefix}_upperLeg_imu_link" />
+		</joint>
+
+		<gazebo reference="${prefix}_upperleg">
+		    <gravity>true</gravity>
+		    <sensor name="{prefix}_upperLeg_imu" type="imu">
+		      <always_on>true</always_on>
+		      <visualize>true</visualize>
+		      <!topic>__default_topic__</topic>
+		      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+			<robotNamespace>/igor</robotNamespace>
+			<topicName>${prefix}_upperLeg_imu/data</topicName>
+			<bodyName>${prefix}_upperleg</bodyName>
+			<updateRateHZ>500.0</updateRateHZ>
+			<gaussianNoise>0.0</gaussianNoise>
+			<xyzOffset>0 0 0</xyzOffset>
+			<rpyOffset>0 0 0</rpyOffset>
+			<frameName>${prefix}_upperLeg_imu_link</frameName>
+		      </plugin>
+		      <pose>0 0 0 0 0 0</pose>
+		    </sensor>
+		</gazebo-->
+
+
+	</xacro:macro>
+
+
+</robot>

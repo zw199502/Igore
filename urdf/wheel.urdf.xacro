@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="igor_wheel">
+
+	<xacro:macro name="igor_wheel" params="prefix flip reflect *joint_pose">
+
+		<link name="${prefix}_wheel">
+			<visual>
+				<geometry>
+					<mesh filename="package://igor/meshes/wheel.STL" scale="0.001 0.001 0.001"/>
+				</geometry>
+			    	<origin xyz="${reflect*wheel_radius} ${reflect*(wheel_radius+(wheel_length/6))} -${wheel_radius}" rpy="0 0 ${flip*M_PI}"/>
+			    	<material name="white">
+					<color rgba="1.0 1.0 1.0 1.0"/>
+				</material>
+			</visual>
+
+			<collision>
+			    <geometry>
+				<cylinder radius="${wheel_radius}" length="${wheel_length}" />
+			    </geometry>
+			    <origin xyz="0 0 0" rpy="${M_PI/2} ${0} 0"/>
+			</collision>
+			
+	    		<inertial>
+	      			<mass value="0.35"/>
+	      			<inertia iyy="0.001806" ixy="0.0" ixz="0.0" ixx="0.000929" iyz="0.0" izz="0.000929"/>
+	    		</inertial>
+
+	    		<!--inertial>
+	      			<mass value="0.28"/>
+	      			<inertia iyy="0.001445" ixy="0.0" ixz="0.0" ixx="0.000744" iyz="0.0" izz="0.000744"/>
+	    		</inertial-->
+
+
+
+		</link>
+
+		<gazebo reference="${prefix}_wheel">
+	      		<mu1 value="1e+20"/> <!--For ground friction, large value means no slip-->
+	      		<mu2 value="1e+20"/>
+	      		<kp value="1e+10" /> <!--HOW HARD IS SURFACE (contact stiffness), higher value means harder-->
+	      		<kd value="1.0" />
+			<minDepth>0.001</minDepth>
+	      		<material>Gazebo/Grey</material>
+	    	</gazebo>
+
+		<joint name="${prefix}_wheel_joint" type="continuous">
+			<xacro:insert_block name="joint_pose"/>
+			<parent link="${prefix}_wheelActuator"/>
+			<child  link="${prefix}_wheel"/>
+			<limit effort="5" velocity="30"/>  <!-- effort limit in N (prismatic) or N.m (revolute), Velocity limit in m/s or rad/s -->
+			<axis xyz="0 1 0"/>
+			<joint_properties damping="0.1" friction="0.0"/>
+		</joint>
+
+    		<!--transmission name="Diff_${prefix}_wheel_trans">
+	      		<type>transmission_interface/SimpleTransmission</type>
+	      		<actuator name="${prefix}_wheel_motor">
+				<mechanicalReduction>1</mechanicalReduction>
+	      		</actuator>
+	      		<joint name="${prefix}_wheel_joint">
+				<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+	      		</joint>
+    		</transmission-->
+
+    		<transmission name="${prefix}_wheel_trans">
+	      		<type>transmission_interface/SimpleTransmission</type>
+	      		<actuator name="${prefix}_wheel_motor">
+				<mechanicalReduction>1</mechanicalReduction>
+	      		</actuator>
+	      		<joint name="${prefix}_wheel_joint">
+				<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+	      		</joint>
+    		</transmission>
+
+		<!-- Enable the Joint Feedback -->
+		<gazebo reference="${prefix}_wheel_joint">
+		<provideFeedback>true</provideFeedback>
+		</gazebo>
+
+		<!-- The force_torque_sensor plugin -->
+		<!--gazebo>
+		<plugin name="ft_sensor" filename="libgazebo_ros_ft_sensor.so">
+		<updateRate>1000.0</updateRate>
+		<topicName>${prefix}_wheel_ft_sensor</topicName>
+		<jointName>${prefix}_wheel_joint</jointName>
+		</plugin>
+		</gazebo-->
+
+
+
+
+	</xacro:macro>
+
+
+</robot>

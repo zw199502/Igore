@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="igor_actuator">
+
+	<xacro:macro name="igor_actuator" params="prefix reflect flip parent_link *joint_pose">
+
+
+		<link name="${prefix}Actuator">
+			<visual>
+				<origin rpy="${(flip*M_PI)+(M_PI/2)} ${M_PI} ${0}" xyz="${actuator_x_size/2} ${reflect*(-actuator_y_size/2)} ${reflect*(-actuator_z_size/2)}"/>
+				<geometry>
+					<mesh filename="package://igor/meshes/X8-Export.STL" scale="0.001 0.001 0.001"/>
+		      		</geometry>
+		      		<material name="red">
+					<color rgba="1.0 0.0 0.0 1.0"/>
+		      		</material>
+		    	</visual>
+			
+			<collision>
+				<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+				<geometry>
+					<box size="${actuator_x_size} ${actuator_y_size} ${actuator_z_size}"/>
+		      		</geometry>
+		    	</collision>
+
+
+	    		<inertial>
+	      			<mass value="0.46"/>
+	      			<inertia ixx="0.00066" ixy="0.0" ixz="0.0" iyy="0.00054" iyz="0.0" izz="0.00028"/>
+	    		</inertial>           
+		</link>
+
+	    	<gazebo reference="${prefix}Actuator">
+	      		<mu1 value="1.0"/>
+	      		<mu2 value="1.0"/>
+	      		<kp value="10000.0" />
+	      		<kd value="10000.0" />
+	      		<material>Gazebo/Red</material>
+	    	</gazebo>
+
+
+		<joint name="${prefix}Actuator_joint" type="fixed">
+			<parent link="${parent_link}"/>
+			<child  link="${prefix}Actuator"/>
+			<xacro:insert_block name="joint_pose"/>
+		</joint>
+
+		<gazebo reference="${prefix}Actuator_joint">
+  			<preserveFixedJoint>true</preserveFixedJoint>
+		</gazebo>
+
+
+
+	
+
+
+
+	</xacro:macro>
+
+
+</robot>

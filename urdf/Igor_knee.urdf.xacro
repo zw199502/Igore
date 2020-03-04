@@ -1,0 +1,300 @@
+<?xml version='1.0'?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="igor">
+
+	<!-- Included URDF/XACRO Files -->
+	<xacro:include filename="$(find igor)/urdf/actuator.urdf.xacro" />
+	<xacro:include filename="$(find igor)/urdf/wheel.urdf.xacro" />
+	<xacro:include filename="$(find igor)/urdf/upperleg.urdf.xacro" />
+	<xacro:include filename="$(find igor)/urdf/lowerleg.urdf.xacro" />
+
+
+	  <!-- Base Size -->
+	<xacro:property name="base_y_size" value="0.3048" />
+	<xacro:property name="base_x_size" value="0.127" />
+	<xacro:property name="base_z_size" value="0.3048" />
+	<xacro:property name="base_y_offset" value="0.0076" />
+
+		  <!-- Actuator Size -->
+	<xacro:property name="actuator_y_size" value="0.045" />
+	<xacro:property name="actuator_z_size" value="0.073" />
+	<xacro:property name="actuator_x_size" value="0.11" />
+
+
+	<!-- Wheel Properties -->
+	<xacro:property name="wheel_length" value="0.03" />
+	<xacro:property name="wheel_radius" value="0.1016" />
+
+	<!-- Upper leg Properties -->
+	<xacro:property name="upper_leg_length" value="0.35" />
+	<xacro:property name="upper_leg_radius" value="0.015875" />
+
+	<!-- Lower leg Properties -->
+	<xacro:property name="lower_leg_length" value="0.3" />
+	<xacro:property name="lower_leg_radius" value="0.015875" />
+
+	<!-- Maths constant -->
+	<xacro:property name="M_PI" value="3.14159"/>
+
+	<!-- Actuator Gear Ratio -->
+	<xacro:property name="X8_3_Ratio" value="272.222"/>
+	<xacro:property name="X5_9_Ratio" value="1742.222"/>
+
+
+	<!-- Gazebo plug-in for ROS -->
+  	<gazebo> 
+    		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      		<robotNamespace>/igor</robotNamespace>
+    		</plugin>
+  	</gazebo>
+
+
+
+	<!-- Dummy link for reference -->
+
+	<link name="base_link"/>
+           
+
+	  
+	<link name="chassis">
+  		<inertial>
+     			<origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
+			<mass value="5.0" />
+      			<inertia izz="0.04543" iyz="0.000" ixz="0.00000" iyy="0.04543" ixy="0.000" ixx="0.0774" />
+		</inertial> 
+  		
+
+			<!-- Mass change for uncertainity-->
+		<!--inertial>
+     			<origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
+			<mass value="4" />
+      			<inertia izz="0.036344" iyz="0.0" ixz="0.00" iyy="0.036344" ixy="0.000" ixx="0.061936" />
+		</inertial--> 
+
+		<visual>
+			<origin rpy="${M_PI} 0.0 ${-M_PI/2}" xyz="${base_x_size/2} ${base_y_size/2+base_y_offset} ${base_z_size/2}"/>
+			<geometry>
+				<!--box size="0.30 0.1 0.30"/-->
+				<mesh filename="package://igor/meshes/IgorBody.STL" scale="0.001 0.001 0.001"/>
+	      		</geometry>
+	      		<material name="white">
+	        		<color rgba="1 1 1 1.0"/>
+	      		</material>
+	    	</visual>
+	
+		<collision>
+			<geometry>
+				<box size="${base_x_size} ${base_y_size} ${base_z_size}"/>
+	      		</geometry>
+	    	</collision>
+	</link>
+
+	<joint name="base_link_to_chassis" type="fixed">
+		<origin xyz="0 0 0" rpy="0 0 0" />
+		<parent link="base_link" />
+	        <child link="chassis" />
+	</joint>
+
+    	<gazebo reference="chassis">
+      		<mu1 value="1.0"/>
+      		<mu2 value="1.0"/>
+      		<kp value="10000.0" />
+      		<kd value="10000.0" />
+      		<material>Gazebo/Grey</material>
+    	</gazebo>
+
+	<!-- imu_link for getting data in imu frame -->
+    	<link name="body_imu_link"/>
+
+	<joint name="body_imu_link_to_chassis" type="fixed">
+		<origin xyz="0 0 0" rpy="0 0 0" />
+		<parent link="chassis" />
+	        <child link="body_imu_link" />
+	</joint>
+
+	<xacro:igor_actuator prefix="L_base" reflect="1" parent_link="chassis" flip="1">
+                   <!--Origin of the joint from parent frame-->
+		<origin xyz="0.0 ${base_y_size/2+actuator_y_size/2} ${0}" rpy="${0} 0 ${0}" />
+	</xacro:igor_actuator>
+
+	<xacro:igor_actuator prefix="R_base" reflect="-1" parent_link="chassis" flip="0">
+		<origin xyz="0.0 -${base_y_size/2+actuator_y_size/2} 0.0" rpy="0 0 0" />
+	</xacro:igor_actuator>
+
+	
+	<!--Right Leg-->
+
+	<xacro:upperLeg prefix="R" reflect="-1" flip="1">
+		<origin xyz="${upper_leg_radius} -${actuator_y_size/2+upper_leg_radius} 0.0" rpy="0 0 0" />
+	</xacro:upperLeg>
+	
+
+	<xacro:lowerLeg prefix="R" reflect="-1" flip="1">
+		<origin xyz="${1.2*lower_leg_radius} ${actuator_y_size/2+lower_leg_radius} 0.0" rpy="0 0 0" />
+	</xacro:lowerLeg>
+
+
+	<!--Left Leg-->
+
+	<xacro:upperLeg prefix="L" reflect="1" flip="0">
+		<origin xyz="${upper_leg_radius} ${actuator_y_size/2+upper_leg_radius} 0.0" rpy="0 0 0" />
+	</xacro:upperLeg>
+
+	<xacro:lowerLeg prefix="L" reflect="1" flip="0">
+		<origin xyz="${1.2*lower_leg_radius} -${actuator_y_size/2+lower_leg_radius} 0.0" rpy="0 0 0" />
+	</xacro:lowerLeg>
+
+	<!--Right knee-->
+
+	<xacro:igor_actuator prefix="R_knee" reflect="-1" parent_link="R_upperleg" flip="0">
+		<origin xyz="-${1.2*upper_leg_radius} ${actuator_y_size/2+upper_leg_radius} -${upper_leg_length+actuator_z_size/3}" rpy="0 0 0" />
+	</xacro:igor_actuator>
+
+	<!--Left knee-->
+
+	<xacro:igor_actuator prefix="L_knee" reflect="1" parent_link="L_upperleg" flip="1">
+		<origin xyz="-${1.2*upper_leg_radius} -${actuator_y_size/2+upper_leg_radius} -${upper_leg_length+actuator_z_size/3}" rpy="0 0 0" />
+	</xacro:igor_actuator>
+
+
+	<!--Right wheel-->
+
+	<xacro:igor_actuator prefix="R_wheel" reflect="-1" parent_link="R_lowerleg" flip="0">
+		<origin xyz="-${lower_leg_radius} -${actuator_y_size-0.0038} -${lower_leg_length+actuator_z_size/2.5}" rpy="0 0 0" />
+	</xacro:igor_actuator>
+
+	<xacro:igor_wheel prefix="R" flip="0" reflect="-1">
+		<origin xyz="${0.02} -${(actuator_y_size/2)+wheel_length/2} 0.0" rpy="0 0 0" />
+	</xacro:igor_wheel>
+
+	<!--Left wheel-->
+
+	<xacro:igor_actuator prefix="L_wheel" reflect="1" parent_link="L_lowerleg" flip="1">
+		<origin xyz="-${lower_leg_radius} ${actuator_y_size-0.0038} -${lower_leg_length+actuator_z_size/2.5}" rpy="0 0 0" />
+	</xacro:igor_actuator>
+
+	<xacro:igor_wheel prefix="L" flip="1" reflect="1">
+		<origin xyz="${0.02} ${(actuator_y_size/2)+wheel_length/2} 0.0" rpy="0 0 0" />
+	</xacro:igor_wheel>
+
+	
+	<!--Robot Center Dummy-->
+	
+	<link name="robot_center_link">
+  		<inertial>
+     			<origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
+			<mass value="1e-3" />
+      			<inertia izz="0.000001" iyz="0.0" ixz="0.0" iyy="0.000001" ixy="0.0" ixx="0.000001" />
+		</inertial>
+		<collision>
+			<geometry>
+				<box size="0.001 0.001 0.001"/>
+	      		</geometry>
+	    	</collision>
+	</link> 
+
+	<joint name="actuator_to_robot_center" type="fixed">
+		<origin xyz="${0.02} -${base_y_size/2+actuator_y_size/2} 0.0" rpy="0 0 0" />
+		<parent link="L_wheelActuator" />
+	        <child link="robot_center_link" />
+	</joint>
+
+
+	<gazebo reference="actuator_to_robot_center">
+  		<preserveFixedJoint>true</preserveFixedJoint>
+	</gazebo>
+
+
+	<!-- imu_link for getting data in imu frame -->
+    	<link name="center_imu_link"/>
+
+	<joint name="center_imu_link" type="fixed">
+		<origin xyz="0 0 0" rpy="0 0 0" />
+		<parent link="robot_center_link" />
+	        <child link="center_imu_link" />
+	</joint>
+
+	<!-- Center IMU Sensor -->
+
+	<gazebo reference="robot_center_link">
+	    <gravity>true</gravity>
+	    <sensor name="center_imu" type="imu">
+	      <always_on>true</always_on>
+	      <visualize>true</visualize>
+	      <update_rate>500</update_rate>
+	      <!--topic>__default_topic__</topic-->
+	      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+		<robotNamespace>/igor</robotNamespace>
+		<topicName>center_imu/data</topicName>
+		<bodyName>robot_center_link</bodyName>
+		<updateRateHZ>500.0</updateRateHZ>
+		<gaussianNoise>0.0</gaussianNoise>
+		<xyzOffset>0 0 0</xyzOffset>
+		<rpyOffset>0 0 0</rpyOffset>
+		<frameName>center_imu_link</frameName>
+	      </plugin>
+	      <pose>0 0 0 0 0 0</pose>
+	    </sensor>
+	</gazebo>
+
+
+
+
+	<!-- Odometery Sensor -->
+	<gazebo>
+		<plugin name="p3d_base_controller" filename= "libgazebo_ros_p3d.so">
+			<robotNamespace>/igor</robotNamespace>
+			<alwaysOn>true</alwaysOn>
+			<updateRate>500.0</updateRate>
+			<bodyName>base_link</bodyName>
+			<topicName>odom</topicName>
+			<gaussianNoise>0.0</gaussianNoise>
+			<frameName>map</frameName>
+			<xyzOffsets>0 0 0</xyzOffsets>
+			<rpyOffsets>0 0 0</rpyOffsets>
+		</plugin>
+	</gazebo>
+
+	<!-- Odometery Sensor -->
+	<gazebo>
+		<plugin name="p3d_base_controller" filename= "libgazebo_ros_p3d.so">
+			<robotNamespace>/igor</robotNamespace>
+			<alwaysOn>true</alwaysOn>
+			<updateRate>500.0</updateRate>
+			<bodyName>robot_center_link</bodyName>
+			<topicName>center</topicName>
+			<gaussianNoise>0.0</gaussianNoise>
+			<frameName>map</frameName>
+			<xyzOffsets>0 0 0</xyzOffsets>
+			<rpyOffsets>0 0 0</rpyOffsets>
+		</plugin>
+	</gazebo>
+
+	
+
+	<!-- Body IMU Sensor -->
+
+	<!--gazebo reference="chassis">
+	    <gravity>true</gravity>
+	    <sensor name="body_imu" type="imu">
+	      <always_on>true</always_on>
+	      <visualize>true</visualize>
+	      <!topic>__default_topic__</topic>
+	      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+		<robotNamespace>/igor</robotNamespace>
+		<topicName>body_imu/data</topicName>
+		<bodyName>chassis</bodyName>
+		<updateRateHZ>1000.0</updateRateHZ>
+		<gaussianNoise>0.0</gaussianNoise>
+		<xyzOffset>0 0 0</xyzOffset>
+		<rpyOffset>0 0 0</rpyOffset>
+		<frameName>body_imu_link</frameName>
+	      </plugin>
+	      <pose>0 0 0 0 0 0</pose>
+	    </sensor>
+	</gazebo-->
+
+
+
+
+
+</robot>

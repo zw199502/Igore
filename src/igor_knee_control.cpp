@@ -23,20 +23,19 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     //pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("/igor/robot_pose", 1);
     client = nh_.serviceClient<std_srvs::Empty>("/gazebo/reset_world"); // service client of gazebo service
 
-
+    // LQR gains
     k_r(0,0)= k_l(0,0) = -1*(-3.5355);
     k_r(0,1)= -1*(10.1015);
     k_r(0,2)= k_l(0,2) = -1*(-51.1363);
     k_r(0,3)= k_l(0,3) = -1*(-7.9125);
     k_r(0,4)= -1*(1.6642);
     k_r(0,5)= k_l(0,5)= -1*(-16.9210);
-
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 
 
 
-
+    // Viscous friction matrix
     V_h(0,0) = 19.3750;  
     V_h(0,1) = 0;
     V_h(0,2) = -1.9685;
@@ -47,6 +46,7 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     V_h(2,1) =  0; 
     V_h(2,2) =  0.200;
 
+    // Torque selection matrix
     E_h_inv(0,0) = 0.0502811;   
     E_h_inv(0,1) = 0.1444836;  
     E_h_inv(0,2) = -0.0051086;
@@ -54,7 +54,7 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     E_h_inv(1,1) = -0.1444836;  
     E_h_inv(1,2) = -0.0051086;
    
-    
+    // Computed-torque controller's gain
     Kp(0,0) = Kp1;
     Kp(0,1) = 0;
     Kp(0,2) = 0;
@@ -75,7 +75,8 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     Kv(2,1) = 0;
     Kv(2,2) = Kv3;
 
-    ref_state(0) = 1; // Center Position 
+    // Reference states
+    ref_state(0) = 0; // Center Position 
     ref_state(1) = 0*(2.35); // Yaw
     ref_state(2) = 0.0; // Beta
     ref_state(3) = 0; // Center velocity
@@ -301,8 +302,8 @@ void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //State-feedback co
     
 
     
-    state_vec.x = igor_state(2); // Center-position
-    state_vec.y = knee_ref.data; //Yaw Angle
+    state_vec.x = igor_state(2);
+    state_vec.y = knee_ref.data;
     state_vec.z = igor_state(5); //Pitch velocity
     state_vec2.x = igor_state(2);
     state_vec2.y = CoG_angle_filtered;
@@ -318,12 +319,13 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
     igor_knee_control::ref_update();
 
     //L = CoG_Position.z - igor_position.z;
-    L = 0.513;
+    L = 0.513; // CoM height
 
     velocities(0) = vec(3); // Center velocity
     velocities(1) = vec(4); // Yaw velocity
     velocities(2) = vec(5); // Pitch velocity
 
+    // Inertia matrix
     M_h(0,0)= 6.9700;
     M_h(0,1)= 0;
     M_h(0,2) = 5.9200*L*cos(vec(2));
@@ -334,19 +336,22 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
     M_h(2,1)= 0;
     M_h(2,2)= 5.9200*pow(L,2) + 0.0454;
 
-    
+   // Coriolis and centrifugal vector 
     H_h(0) = -5.9200*L*sin(vec(2))*(pow(vec(4),2) + pow(vec(5),2));
     H_h(1) = vec(4)*(5.92000* vec(5)*sin(2*vec(2))*pow(L,2) + 5.92000*vec(3)*sin(vec(2))*L + 0.03197*vec(5)*sin(2*vec(2)));
     H_h(2) = -0.5000*pow(vec(4),2)*sin(2*vec(2))*(5.9200*pow(L,2) + 0.0320);
 
+    // Gravity vector
     G_h(0) = 0;
     G_h(1) = 0;
     G_h(2) = -58.0752*L*sin(vec(2));
 
+    // Position errors
     Ep(0) = vec(0)-ref_state(0);
     Ep(1) = vec(1)-ref_state(1);
     Ep(2) = vec(2)-ref_state(2);
-   
+    
+    // Velocity errors
     Ev(0) = vec(3)-ref_state(3);
     Ev(1) = vec(4)-ref_state(4);
     Ev(2) = vec(5)-ref_state(5);
@@ -355,8 +360,8 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
     feedbck = Kv*Ev + Kp*Ep; 
     output_trq = E_h_inv*(M_h*(feedbck)+ H_h + V_h*velocities + G_h);
     
-    trq_r.data = output_trq(1);
-    trq_l.data = output_trq(0);
+    trq_r.data = output_trq(1); // Right wheel torque
+    trq_l.data = output_trq(0); // Left wheel torque
     
     
     Lwheel_pub.publish(trq_l);

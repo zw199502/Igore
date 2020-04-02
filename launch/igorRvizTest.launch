@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 	<!-- Values passed by command line input -->
-	<arg name="model" default="Igor_knee.urdf.xacro" />
-	<arg name="gui" default="true" />
+	<arg name="model" default="Igor.urdf.xacro" />
+	<arg name="gui" default="false" />
 
 	<!-- set the Parameters on Parameter Server -->
 	<param name="robot_description" command="$(find xacro)/xacro '$(find igor)/urdf/$(arg model)' "/> <!--To change from xacro to urdf -->
@@ -10,7 +10,10 @@
 	<param name="use_gui" value="$(arg gui)" />
 
 	<!-- start nodes -->
-	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+	<!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /-->
+	<node name="igor_test" pkg="igor" type="example_01_lookup_node" output="screen" />
+	<node name="cog_publisher_node" pkg="robot_kinetics" type="cog_publisher_node" args="" output="screen" respawn="true">
+  	</node>
 	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find igor)/urdf.rviz" required="true" />
 

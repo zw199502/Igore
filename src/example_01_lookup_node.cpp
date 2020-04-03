@@ -37,7 +37,6 @@ int main(int argc, char **argv) {
   ros::Publisher  joint_pub;
   joint_pub = n.advertise<sensor_msgs::JointState>( "/joint_states", 1 );
 
-  std::string group_name = "my_group";
   // Create a hebi Lookup Object
   hebi::Lookup lookup;
   // Wait 2 seconds for the module list to populate, and then print out its contents

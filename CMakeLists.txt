@@ -20,6 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_msgs
   tf_conversions
   visualization_msgs
+  hebiros
+  hebi_cpp_api
 )
 
 find_package(iir)
@@ -118,7 +120,7 @@ find_package(gram_savitzky_golay REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES igor
-  CATKIN_DEPENDS roscpp rospy std_msgs tf sensor_msgs geometry_msgs nav_msgs message_filters rosgraph_msgs gazebo_msgs tf_conversions visualization_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs tf sensor_msgs geometry_msgs nav_msgs message_filters rosgraph_msgs gazebo_msgs tf_conversions visualization_msgs hebi_cpp_api
 #  DEPENDS system_lib
 )
 
@@ -163,6 +165,8 @@ add_executable(igor_knee_controller_node src/igor_knee_control.cpp)
 add_executable(igor_odom_broadcaster_node src/odom_broadcaster.cpp)
 add_executable(igor_test_main_node src/test_main.cpp)
 add_executable(igor_markers_node src/igor_markers.cpp)
+add_executable(example_01_lookup_node src/example_01_lookup_node.cpp)
+add_executable(igor_jointstate_node src/igor_jointstate_pub.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -206,6 +210,12 @@ target_link_libraries(igor_test_main_node
 target_link_libraries(igor_markers_node
    ${catkin_LIBRARIES}
  )
+
+target_link_libraries(example_01_lookup_node 
+   ${catkin_LIBRARIES})
+
+target_link_libraries(igor_jointstate_node
+   ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

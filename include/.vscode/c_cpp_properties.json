@@ -4,7 +4,10 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/fahadraza/catkin_ws/src/igor/include"
+                "/home/fahadraza/catkin_ws/src/igor/include",
+                "/home/fahadraza/Downloads/hebi-cpp",
+                "/home/fahadraza/Downloads/hebi-cpp/src",
+                "/home/fahadraza/Downloads/hebi-cpp/hebi/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

@@ -36,7 +36,7 @@
 	</node>
 
 
-  	
+  			<!-- Load URDF Model-->
 	<!--param name="robot_description" textfile="$(find igor)/urdf/$(arg model)" /-->
 	
 	<!-- Convert xacro and put on parameter server -->
@@ -55,10 +55,10 @@
   	<!--node name="myIgor_tf_reader" pkg="igor" type="igor_tf_reader_node" args="base_link R_wheel"  output="screen" launch-prefix= "xterm -e" /-->
 	
 	<!--node pkg="tf" type="static_transform_publisher" name="static_broadcaster" args="-0.02 0 0.7 0 0 0 1 robot_center_link base_link 50" /-->
-	<!--node name="igor_contrlr" pkg="igor" type="igor_2d_controller_node" output="screen" /-->
-	<!--node name="igor_3d_contrlr" pkg="igor" type="igor_3d_controller_node" output="screen" /-->
+	<!--node name="igor_controller" pkg="igor" type="igor_2d_controller_node" output="screen" /-->
+	<!--node name="igor_3d_controller" pkg="igor" type="igor_3d_controller_node" output="screen" /-->
 	<node name="igor_knee_controller" pkg="igor" type="igor_knee_controller_node" output="screen"/>
-	<!--node name="igor_disturber" pkg="igor" type="igor_disturber_node" output="screen" /-->
+	<node name="igor_disturber" pkg="igor" type="igor_disturber_node" output="screen" />
 	<node name="igor_odom_broadcaster" pkg="igor" type="igor_odom_broadcaster_node" />
 	<!--node name="igor_test_main" pkg="igor" type="igor_test_main_node" output="screen" /-->
 	<node name="igor_markers_node" pkg="igor" type="igor_markers_node" />

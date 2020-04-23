@@ -42,7 +42,9 @@
   <depend>rosgraph_msgs</depend>
   <depend>gazebo_msgs</depend>
   <depend>tf_conversions</depend> 
-  <depend>visualization_msgs</depend>	
+  <depend>visualization_msgs</depend>
+  <depend>hebiros</depend>
+  <depend>hebi_cpp_api</depend>	
   <!--   Note that this is equivalent to the following: -->
   <!--   <build_depend>roscpp</build_depend> -->
   <!--   <exec_depend>roscpp</exec_depend> -->

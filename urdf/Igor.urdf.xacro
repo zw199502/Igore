@@ -177,6 +177,42 @@
 	</xacro:igor_wheel>
 
 	
+	<!--Right wheel actuator imu_link for getting data in imu frame -->
+    	<link name="RwheelActuator_imu_link"/>
+
+	<joint name="RwheelActuator_imu_link" type="fixed">
+		<origin xyz="0 0 0" rpy="${M_PI/2} ${M_PI/2} 0" />
+		<parent link="R_wheelActuator" />
+	        <child link="RwheelActuator_imu_link" />
+	</joint>
+
+	<!--Left wheel actuator imu_link for getting data in imu frame -->
+    	<link name="LwheelActuator_imu_link"/>
+
+	<joint name="LwheelActuator_imu_link" type="fixed">
+		<origin xyz="0 0 0" rpy="${-M_PI/2} ${M_PI/2} ${0}" />
+		<parent link="L_wheelActuator" />
+	        <child link="LwheelActuator_imu_link" />
+	</joint>
+
+	<!--Left hip actuator imu_link for getting data in imu frame -->
+    	<link name="LhipActuator_imu_link"/>
+
+	<joint name="LhipActuator_imu_link" type="fixed">
+		<origin xyz="0 0 0" rpy="${-M_PI/2} ${0} ${0}" />
+		<parent link="L_baseActuator" />
+	        <child link="LhipActuator_imu_link" />
+	</joint>
+
+	<!--Right hip actuator imu_link for getting data in imu frame -->
+    	<link name="RhipActuator_imu_link"/>
+
+	<joint name="RhipActuator_imu_link" type="fixed">
+		<origin xyz="0 0 0" rpy="${M_PI/2} ${0} ${0}" />
+		<parent link="R_baseActuator" />
+	        <child link="RhipActuator_imu_link" />
+	</joint>
+
 	<!--Robot Center Dummy-->
 	
 	<link name="robot_center_link">

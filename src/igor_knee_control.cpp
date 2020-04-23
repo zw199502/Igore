@@ -13,6 +13,8 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     
     state_pub = nh_.advertise<geometry_msgs::Vector3>( "/igor/stateVec", 1 );
     state_pub2 = nh_.advertise<geometry_msgs::Vector3>( "/igor/stateVec2", 1 );
+    zram_pub = nh_.advertise<geometry_msgs::Vector3>( "/igor/zramVec", 1 );
+    f_pub = nh_.advertise<geometry_msgs::Vector3>( "/igor/fVec", 1 );
     Lwheel_pub = nh_.advertise<std_msgs::Float64>( "/igor/L_wheel_joint_effort_controller/command", 1 );
     Rwheel_pub = nh_.advertise<std_msgs::Float64>( "/igor/R_wheel_joint_effort_controller/command", 1 );
     Lknee_pub = nh_.advertise<std_msgs::Float64>( "/igor/L_kfe_joint_position_controller/command", 1 );
@@ -203,12 +205,53 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
     /**#####################################################**/
 
     // robot_center_pos << igor_position.x, igor_position.y, igor_position.z;
-    
-    // //tf2::doTransform(CoG_Position, CoG_Position, transformStamped);
-    
-    // CoM_pos << (CoG_Position.x), (CoG_Position.y), (CoG_Position.z);
 
+    try
+    { 
+        transformStamped = tfBuffer.lookupTransform("map", "robot_center_link" , ros::Time(0));
+    }
+    catch (tf2::TransformException &ex) 
+    {
+        ROS_WARN("%s",ex.what());
+    }
     
+    tf2::doTransform(CoG_Position, CoG_Position, transformStamped); // Transform from robot_center_link to map
+    
+    CoM_pos << (CoG_Position.x), (CoG_Position.y), (CoG_Position.z); // Eigen 3d vector of CoM position in map frame
+
+   
+
+    my_data3.push_back(CoG_Position.x);
+    my_data4.push_back(CoG_Position.y);
+    my_data5.push_back(CoG_Position.z);
+
+    CoM_acc_x = (f3.filter(my_data3,0))/0.002;
+    CoM_acc_y = (f4.filter(my_data4,0))/0.002;
+    CoM_acc_z = (f5.filter(my_data5,0))/0.002;
+
+    CoM_accl << (CoM_acc_x), (CoM_acc_y), (CoM_acc_z);
+
+    //std::cout << "CoM_acceleration" << std::endl << CoM_accl << std::endl;
+
+    f = CoM_accl - gravity_vec; // Contact forces
+
+    alpha = (ground_level - CoG_Position.z) / f.z();
+
+    zram = CoM_pos + alpha*f;
+
+    zram_vec.x = zram.x();
+    zram_vec.y = zram.y();
+    zram_vec.z = zram.z();
+
+    zram_pub.publish(zram_vec);
+    f.normalize();
+    f_vec.x = f.x();
+    f_vec.y = f.y();
+    f_vec.z = f.z();
+
+    //f_pub.publish(f_vec);
+
+
     // CoM_vec = (CoM_pos - robot_center_pos);
 
   
@@ -374,8 +417,8 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
     Rknee_pub.publish(knee_ref);
 
 
-    state_vec2.x = igor_state(2);
-    state_vec2.y = igor_state(5);
+    state_vec2.x = zram.x();
+    state_vec2.y = CoG_Position.x;
     state_vec2.z = 0*yaw;
 
     this->statePub2(state_vec2); // Publishing the states
@@ -386,10 +429,10 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
 void igor_knee_control::ref_update()
 {
     //ref_state(0) = igor_state(0)+1; // forward position
-    //ref_state(0) = 2*(sin(0.5*ros::Time::now().toSec())); // forward position
+    ref_state(0) = 2*(sin(0.5*ros::Time::now().toSec())); // forward position
     //ref_state(1) = M_pi/2*(cos(0.3*ros::Time::now().toSec())); // yaw
-    knee_ref.data = 2.0*abs(sin(0.3*ros::Time::now().toSec()));
-    hip_ref.data = -1.0*abs(sin(0.3*ros::Time::now().toSec()));
+    knee_ref.data = 0*2.0*abs(sin(0.3*ros::Time::now().toSec()));
+    hip_ref.data = 0*-1.0*abs(sin(0.3*ros::Time::now().toSec()));
     //knee_ref.data = 0.3;
     
     return;

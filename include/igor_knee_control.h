@@ -58,7 +58,7 @@ private:
     geometry_msgs::Point igor_position;
     geometry_msgs::Point CoG_Position;
     geometry_msgs::Vector3 igor_linear_vel;
-    //geometry_msgs::TransformStamped transformStamped;
+    geometry_msgs::TransformStamped transformStamped;
     //visualization_msgs::Marker marker;
 
 
@@ -108,6 +108,12 @@ private:
     //float CoG_last_angle2 = 0;
     float CoG_angle_vel = 0;
     //float CoG_last_pitch_vel2 = 0;
+
+    float CoM_acc_x;
+    float CoM_acc_y;
+    float CoM_acc_z;
+    float ground_level = 0;
+    float alpha = 0;
 
     //ros::Time now;
     //ros::Time last_time;
@@ -166,6 +172,8 @@ private:
     ros::Publisher  Rknee_pub; // creating ROS publisher
     ros::Publisher  Lhip_pub; // creating ROS publisher
     ros::Publisher  Rhip_pub; // creating ROS publisher
+    ros::Publisher  zram_pub; // creating ROS publisher
+    ros::Publisher  f_pub; // creating ROS publisher
     
     //ros::Publisher  marker_pub;
     //ros::Publisher  pose_pub;  
@@ -190,8 +198,12 @@ private:
     Eigen::VectorXf ref_state = Eigen::VectorXf(6);
     Eigen::Vector3d robot_center_pos;
     Eigen::Vector3d CoM_pos;
-    Eigen::Vector3d CoM_vec;
-    Eigen::Vector3d unit_vec;
+    Eigen::Vector3d CoM_accl;
+    Eigen::Vector3d zram;
+    Eigen::Vector3d gravity_vec{0,0,-9.81};
+    Eigen::Vector3d f;
+    //Eigen::Vector3d CoM_vec;
+    //Eigen::Vector3d unit_vec;
     //Eigen::MatrixXd rot = Eigen::MatrixXd(3,3);
 
     Eigen::MatrixXd M_h = Eigen::MatrixXd(3,3);
@@ -217,6 +229,7 @@ private:
     tf::Vector3 CoM_tf;
     tf::Vector3 unit_tf;
     tf::Vector3 rot_axis{0,1,0};
+    
 
     ros::ServiceClient client;
     std_srvs::Empty srv;
@@ -232,6 +245,8 @@ public:
     //float freq = 0;
     geometry_msgs::Vector3 state_vec;
     geometry_msgs::Vector3 state_vec2;
+    geometry_msgs::Vector3 zram_vec;
+    geometry_msgs::Vector3 f_vec;
     geometry_msgs::Vector3 igor_angul_vel; // Vector3 type variable
     //geometry_msgs::Vector3 rpy; // orientation in roll, pitch, and yaw
 
@@ -248,35 +263,36 @@ public:
     // Window size is 2*m+1
     const int m = 15;
     const int m2 = 5;
-    //const int m3 = 30;
+    const int m3 = 15;
     //const int m4 = 20;
     // Polynomial Order
     const int n = 0;
     const int n2 = 1;
-    //const int n3 = 1;
+    const int n3 = 3;
     //const int n4 = 0;
     // Initial Point Smoothing (ie evaluate polynomial at first point in the window)
     // Points are defined in range [-m;m]
     const int t = m;
     const int t2 = m2;
-    //const int t3 = m3;
+    const int t3 = m3;
     //const int t4 = m4;
     // Derivate? 0: no derivation, 1: first derivative...
     const int d = 0;
     double result;
     gram_sg::SavitzkyGolayFilterConfig sg_conf{m,t,n,d,0.002}; // filter configuration
     gram_sg::SavitzkyGolayFilterConfig sg_conf2{m2,t2,n2,1,1}; // filter configuration
-    //gram_sg::SavitzkyGolayFilterConfig sg_conf3{m3,t3,n3,1,1}; // filter configuration
+    gram_sg::SavitzkyGolayFilterConfig sg_conf3{m3,t3,n3,2,1}; // filter configuration
     //gram_sg::SavitzkyGolayFilterConfig sg_conf4{m4,t4,n4,d,0.002}; // filter configuration
-    gram_sg::SavitzkyGolayFilter f1{sg_conf}, f2{sg_conf2};
+    gram_sg::SavitzkyGolayFilter f1{sg_conf}, f2{sg_conf2}, f3{sg_conf3}, f4{sg_conf3}, f5{sg_conf3};
      
     boost::circular_buffer<double> my_data1 {boost::circular_buffer<double>((2*m+1),0)};
     //boost::circular_buffer<double> my_data5 {boost::circular_buffer<double>((2*m4+1),0)};
     //boost::circular_buffer<double> my_data6 {boost::circular_buffer<double>((2*m4+1),0)};
     
     boost::circular_buffer<double> my_data2 {boost::circular_buffer<double>((2*m2+1),-0.033)}; // Initialize with -0.033
-    //boost::circular_buffer<double> my_data3 {boost::circular_buffer<double>((2*m3+1),-0.033)};
-    //boost::circular_buffer<double> my_data4 {boost::circular_buffer<double>((2*m3+1),-0.033)};
+    boost::circular_buffer<double> my_data3 {boost::circular_buffer<double>((2*m3+1),-0.033)};
+    boost::circular_buffer<double> my_data4 {boost::circular_buffer<double>((2*m3+1),-0.033)};
+    boost::circular_buffer<double> my_data5 {boost::circular_buffer<double>((2*m3+1),-0.033)};
 
 
 }; //end of class

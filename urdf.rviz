@@ -9,7 +9,8 @@ Panels:
         - /RobotModel1
         - /TF1
         - /TF1/Frames1
-      Splitter Ratio: 0.6638176441192627
+        - /PointStamped1
+      Splitter Ratio: 0.7920227646827698
     Tree Height: 687
   - Class: rviz/Selection
     Name: Selection
@@ -55,7 +56,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
@@ -69,12 +70,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        L_hfeActuator:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        L_kfeActuator:
+        L_kneeActuator:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -94,13 +90,21 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        Link Tree Style: Links in Alphabetic Order
-        R_baseActuator:
+        L_wheelActuator:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        R_bodyActuator:
+        LhipActuator_imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        Link Tree Style: Links in Alphabetic Order
+        LwheelActuator_imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        R_baseActuator:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -125,11 +129,33 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        R_wheelActuator:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RhipActuator_imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        RwheelActuator_imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
         chassis:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        robot_center_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -141,24 +167,104 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
-      Marker Scale: 5
+        L_baseActuator:
+          Value: false
+        L_kneeActuator:
+          Value: false
+        L_lowerleg:
+          Value: false
+        L_upperleg:
+          Value: false
+        L_wheel:
+          Value: true
+        L_wheelActuator:
+          Value: false
+        LhipActuator_imu_link:
+          Value: false
+        LwheelActuator_imu_link:
+          Value: false
+        R_baseActuator:
+          Value: false
+        R_kneeActuator:
+          Value: false
+        R_lowerleg:
+          Value: false
+        R_upperleg:
+          Value: false
+        R_wheel:
+          Value: true
+        R_wheelActuator:
+          Value: false
+        RhipActuator_imu_link:
+          Value: false
+        RwheelActuator_imu_link:
+          Value: false
+        base_link:
+          Value: true
+        chassis:
+          Value: false
+        imu_link:
+          Value: false
+        odom:
+          Value: true
+        robot_center_link:
+          Value: false
+      Marker Scale: 1
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        odom:
+          base_link:
+            chassis:
+              L_baseActuator:
+                L_upperleg:
+                  L_kneeActuator:
+                    L_lowerleg:
+                      L_wheelActuator:
+                        L_wheel:
+                          {}
+                        LwheelActuator_imu_link:
+                          {}
+                        robot_center_link:
+                          {}
+                LhipActuator_imu_link:
+                  {}
+              R_baseActuator:
+                R_upperleg:
+                  R_kneeActuator:
+                    R_lowerleg:
+                      R_wheelActuator:
+                        R_wheel:
+                          {}
+                        RwheelActuator_imu_link:
+                          {}
+                RhipActuator_imu_link:
+                  {}
+              imu_link:
+                {}
       Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 204; 41; 204
+      Enabled: false
+      History Length: 1
+      Name: PointStamped
+      Radius: 0.15000000596046448
+      Topic: /cog/robot
+      Unreliable: false
       Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: base_link
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -182,25 +288,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.88246488571167
+      Distance: 4.636731147766113
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.0744357705116272
-        Y: -0.27129286527633667
-        Z: 0.0072362483479082584
+        X: 0.1623460203409195
+        Y: -0.028484582901000977
+        Z: -0.9244920611381531
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.34479767084121704
+      Pitch: 0.4397977590560913
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 6.158468723297119
+      Yaw: 0.04529372602701187
     Saved:
       - Class: rviz/Orbit
         Distance: 2.6209158897399902

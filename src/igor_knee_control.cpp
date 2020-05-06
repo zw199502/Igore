@@ -116,10 +116,10 @@ void igor_knee_control::center_imu_callback(const sensor_msgs::Imu::ConstPtr &ms
     //igor_state(2) = floorf(pitch*10000)/10000;
     //igor_state(5) = pitch_vel_y;
     
-    igor_state(1) = floorf(yaw*10000)/10000; // Negative for CT controller and Positive for LQR controller
+    igor_state(1) = floorf(yaw*10000)/10000;
     igor_state(4) = yaw_vel_z; 
 
-
+    ROS_INFO("Imu Pitch: %f",pitch);
 
     //this->lqr_controller(igor_state);
     //this->CT_controller(igor_state);

@@ -3,23 +3,28 @@
 	<!-- Values passed by command line input -->
 	<arg name="model" default="Igor.urdf.xacro" />
 	<arg name="gui" default="false" />
+        <arg name="statistics" default="true" />
 
 	<!-- set the Parameters on Parameter Server -->
 	<param name="robot_description" command="$(find xacro)/xacro '$(find igor)/urdf/$(arg model)' "/> <!--To change from xacro to urdf -->
 	<!--param name="robot_description" textfile="$(find igor)/urdf/$(arg model)" /-->
 	<param name="use_gui" value="$(arg gui)" />
+	<param name="enable_statistics" value="$(arg statistics)" />
 
 	<!-- start nodes -->
 	<!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /--> <!--Only for GUI to change joint states /-->
 	<!--node name="igor_test" pkg="igor" type="example_01_lookup_node" output="screen" /-->
 	<node name="igor_jointState_publisher" pkg="igor" type="igor_jointstate_node" output="screen" />
+        
 	<node name="cog_publisher_node" pkg="robot_kinetics" type="cog_publisher_node" output="screen" respawn="true">
   	</node>
         <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
 		<param name="publish_frequency" type="double" value="1000.0" />
+		<remap from="/joint_states" to="/HWjoint_states" />
 	</node>
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find igor)/urdf.rviz" required="true" />
-
+	<node name="igorHW_controller" pkg="igor" type="igorHW_controller_node" output="screen" />
+        
         <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" output="screen" launch-prefix= "xterm -e" clear_params="true">
 		<param name="frequency" value="500"/>  
 		<param name="sensor_timeout" value="0.2"/>  
@@ -34,18 +39,18 @@
 		<param name="world_frame" value="odom"/>
 
 		<param name="odom0" value="/wheel_odom"/>
-                <param name="imu0" value="/Rhip_imu/data"/>
-		<param name="imu1" value="/Lhip_imu/data"/>
-                <param name="imu2" value="/Lwheel_imu/data"/>
-		<param name="imu3" value="/Rwheel_imu/data"/>
+                <param name="imu0" value="/Lhip_imu/data"/>
+		<param name="imu1" value="/Rhip_imu/data"/>
+                <!--param name="imu2" value="/Lwheel_imu/data"/>
+		<param name="imu3" value="/Rwheel_imu/data"/-->
                 
 		<param name="odom0_nodelay" value="true"/>
 		<param name="odom0_relative" value="true"/>
-                <param name="odom0_queue_size" value="10"/> 
-		<param name="imu0_queue_size" value="10"/>
-		<param name="imu1_queue_size" value="10"/>
-		<param name="imu2_queue_size" value="10"/>
-		<param name="imu3_queue_size" value="10"/>
+                <param name="odom0_queue_size" value="20"/> 
+		<param name="imu0_queue_size" value="20"/>
+		<param name="imu1_queue_size" value="20"/>
+		<!--param name="imu2_queue_size" value="20"/>
+		<param name="imu3_queue_size" value="20"/-->
                 
 		<rosparam param="odom0_config">
                   [true,true,true, 
@@ -71,7 +76,7 @@
                    false,false,false]
                 </rosparam>
 
-                <rosparam param="imu2_config">
+                <!--rosparam param="imu2_config">
                   [false,false,false, 
                    false,true,false, 
                    false,false,false, 
@@ -85,18 +90,28 @@
                    false,false,false, 
                    false,true,true,
                    false,false,false]
-                </rosparam>
+                </rosparam-->
 
 		<param name="odom0_differential" value="false"/>
+                <param name="imu0_differential" value="false"/>
+                <param name="imu1_differential" value="false"/>
                 
-                <rosparam param="imu0_differential"> 
+                <!--rosparam param="odom0_differential"> 
                   [false,false,false,
-                   false,false,true,
+                   false,false,false,
                    false,false,false,
                    false,false,false,
                    false,false,false]
                 </rosparam>
-                <rosparam param="imu1_differential"> 
+                
+                <rosparam param="imu0_differential"> 
+                  [false,false,false,
+                   false,false,false,
+                   false,false,false,
+                   false,false,true,
+                   false,false,false]
+                </rosparam>
+                <!rosparam param="imu1_differential"> 
                   [false,false,false,
                    false,false,true,
                    false,false,false,
@@ -127,7 +142,7 @@
                    false,false,false]
                 </rosparam>
 
-                <rosparam param="imu1_relative"> 
+                <!rosparam param="imu1_relative"> 
                   [false,false,false,
                    false,false,false,
                    false,false,false,
@@ -148,30 +163,30 @@
                    false,false,false,
                    false,false,false,
                    false,false,false]
-                </rosparam>
+                </rosparam-->
 
 
 		<param name="imu0_remove_gravitational_acceleration" value="true"/>
 		<param name="imu1_remove_gravitational_acceleration" value="true"/>
-                <param name="imu2_remove_gravitational_acceleration" value="true"/>
-                <param name="imu3_remove_gravitational_acceleration" value="true"/>
+                <!--param name="imu2_remove_gravitational_acceleration" value="true"/>
+                <param name="imu3_remove_gravitational_acceleration" value="true"/-->
 
                 <rosparam param="process_noise_covariance">
                   [0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                    0,    0.05, 0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                    0,    0,    0.06, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                   0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                   0,    0,    0,    1e-9, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                    0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                   0,    0,    0,    0,    0,    0.06, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+                   0,    0,    0,    0,    0,    0.03,  0,     0,     0,    0,    0,    0,    0,    0,    0,
                    0,    0,    0,    0,    0,    0,    0.025, 0,     0,    0,    0,    0,    0,    0,    0,
                    0,    0,    0,    0,    0,    0,    0,     0.025, 0,    0,    0,    0,    0,    0,    0,
                    0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
-                   0,    0,    0,    0,    0,    0,    0,     0,     0,    0.01, 0,    0,    0,    0,    0,
+                   0,    0,    0,    0,    0,    0,    0,     0,     0,    1e-9, 0,    0,    0,    0,    0,
                    0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
                    0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0.02, 0,    0,    0,
                    0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0.01, 0,    0,
                    0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0.01, 0,
-                   0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.015]
+                   0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.01]
                 </rosparam>
 
 		<rosparam param="initial_estimate_covariance">

@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     geometry_msgs::TransformStamped odom_trans;
     ros::Time last_time, current_time;
     sensor_msgs::JointState igor_joint_states; // Joint states
-    ros::Publisher joint_pub = nh_.advertise<sensor_msgs::JointState>("/joint_states", 10); // Joint state publisher
+    ros::Publisher joint_pub = nh_.advertise<sensor_msgs::JointState>("/HWjoint_states", 10); // Hardware Joint state publisher
     ros::Publisher odom_pub = nh_.advertise<nav_msgs::Odometry>("/wheel_odom", 10); // odometry publisher
     ros::Publisher Lhip_imu_pub = nh_.advertise<sensor_msgs::Imu>("/Lhip_imu/data", 10); // Left hip imu publisher
     ros::Publisher Rhip_imu_pub = nh_.advertise<sensor_msgs::Imu>("/Rhip_imu/data", 10); // Right hip imu publisher
@@ -71,15 +71,46 @@ int main(int argc, char **argv)
     ros::Publisher Lwheel_imu_pub = nh_.advertise<sensor_msgs::Imu>("/Lwheel_imu/data", 10); // Left wheel imu publisher
 
     /** IMU covariance **/
-    Lwheel_imu.orientation_covariance[0] = 0.001;
-    Lwheel_imu.orientation_covariance[4] = 0.001;
-    Lwheel_imu.orientation_covariance[8] = 0.001;
-    Lwheel_imu.angular_velocity_covariance[0] = 0.001;
-    Lwheel_imu.angular_velocity_covariance[4] = 0.001;
-    Lwheel_imu.angular_velocity_covariance[8] = 0.001;
-    Lwheel_imu.linear_acceleration_covariance[0] = 0.001;
-    Lwheel_imu.linear_acceleration_covariance[4] = 0.001;
-    Lwheel_imu.linear_acceleration_covariance[8] = 0.001;
+    // Lwheel_imu.orientation_covariance[0] = pow(4.9875951e-5, 2);
+    // Lwheel_imu.orientation_covariance[4] = pow(2.7079396e-5, 2);
+    // Lwheel_imu.orientation_covariance[8] = pow(3.4455115e-5, 2);
+    // Lwheel_imu.angular_velocity_covariance[0] = pow(0.00053151, 2);
+    // Lwheel_imu.angular_velocity_covariance[4] = pow(0.00057182, 2);
+    // Lwheel_imu.angular_velocity_covariance[8] = pow(0.00048372, 2);
+    // Lwheel_imu.linear_acceleration_covariance[0] = pow(0.0061082, 2);
+    // Lwheel_imu.linear_acceleration_covariance[4] = pow(0.0069595, 2);
+    // Lwheel_imu.linear_acceleration_covariance[8] = pow(0.0050193, 2);
+
+    // Rwheel_imu.orientation_covariance[0] = pow(3.6820766e-5, 2);
+    // Rwheel_imu.orientation_covariance[4] = pow(3.3946212e-5, 2);
+    // Rwheel_imu.orientation_covariance[8] = pow(3.1968457e-5, 2);
+    // Rwheel_imu.angular_velocity_covariance[0] = pow(0.00053684, 2);
+    // Rwheel_imu.angular_velocity_covariance[4] = pow(0.00051864, 2);
+    // Rwheel_imu.angular_velocity_covariance[8] = pow(0.00055331, 2);
+    // Rwheel_imu.linear_acceleration_covariance[0] = pow(0.0058694, 2);
+    // Rwheel_imu.linear_acceleration_covariance[4] = pow(0.0068303, 2);
+    // Rwheel_imu.linear_acceleration_covariance[8] = pow(0.0047131, 2);
+
+    Lhip_imu.orientation_covariance[0] = pow(2.4104259e-5, 2);
+    Lhip_imu.orientation_covariance[4] = pow(2.1378862e-5, 2);
+    Lhip_imu.orientation_covariance[8] = pow(2.4027564e-5, 2);
+    Lhip_imu.angular_velocity_covariance[0] = pow(0.00054629, 2);
+    Lhip_imu.angular_velocity_covariance[4] = pow(0.00048276, 2);
+    Lhip_imu.angular_velocity_covariance[8] = pow(0.00054565, 2);
+    Lhip_imu.linear_acceleration_covariance[0] = pow(0.0063116, 2);
+    Lhip_imu.linear_acceleration_covariance[4] = pow(0.0055439, 2);
+    Lhip_imu.linear_acceleration_covariance[8] = pow(0.0046687, 2);
+
+    Rhip_imu.orientation_covariance[0] = pow(2.1639301e-5, 2);
+    Rhip_imu.orientation_covariance[4] = pow(3.5121155e-5, 2);
+    Rhip_imu.orientation_covariance[8] = pow(2.7566188e-5, 2);
+    Rhip_imu.angular_velocity_covariance[0] = pow(0.00055807, 2);
+    Rhip_imu.angular_velocity_covariance[4] = pow(0.00052338, 2);
+    Rhip_imu.angular_velocity_covariance[8] = pow(0.00050967, 2);
+    Rhip_imu.linear_acceleration_covariance[0] = pow(0.0066336, 2);
+    Rhip_imu.linear_acceleration_covariance[4] = pow(0.0061227, 2);
+    Rhip_imu.linear_acceleration_covariance[8] = pow(0.0046339, 2);
+    /*****************************************************************///
 
     // Create a hebi Lookup Object
     hebi::Lookup lookup;
@@ -174,10 +205,10 @@ int main(int argc, char **argv)
         // Joint efforts N.m 
         igor_joint_states.effort.push_back(hip_efforts(0));
         igor_joint_states.effort.push_back(knee_efforts(0));
-        igor_joint_states.effort.push_back(wheel_efforts(0));
+        igor_joint_states.effort.push_back(-wheel_efforts(0)); // Left Wheel
         igor_joint_states.effort.push_back(hip_efforts(1));
         igor_joint_states.effort.push_back(knee_efforts(1));
-        igor_joint_states.effort.push_back(wheel_efforts(1));
+        igor_joint_states.effort.push_back(wheel_efforts(1)); // Right Wheel
        
 
         /************** Wheel odometry**************/
@@ -209,18 +240,31 @@ int main(int argc, char **argv)
         // nav odom
         wheel_odom.header.stamp = current_time;
         wheel_odom.header.frame_id = "odom";
-        wheel_odom.child_frame_id = "robot_center_link";
+        wheel_odom.child_frame_id = "base_link";
 
         //set the position
         wheel_odom.pose.pose.position.x = x;
         wheel_odom.pose.pose.position.y = y;
         wheel_odom.pose.pose.position.z = 0.0;
         wheel_odom.pose.pose.orientation = odom_quat;
+        wheel_odom.pose.covariance[0] = 0.01125; // X
+        wheel_odom.pose.covariance[7] = 0.01125; // Y
+        wheel_odom.pose.covariance[14] = 0.00; // Z
+        wheel_odom.pose.covariance[21] = 0.00; // Roll
+        wheel_odom.pose.covariance[28] = 0.00; // Pitch
+        wheel_odom.pose.covariance[35] = 0.001; // Yaw
 
         //set the velocity
         wheel_odom.twist.twist.linear.x = vx;
         wheel_odom.twist.twist.linear.y = vy;
         wheel_odom.twist.twist.angular.z = vth;
+        wheel_odom.twist.covariance[0] = 0.001; // X velocity
+        wheel_odom.twist.covariance[7] = 0.001; // Y velocity
+        wheel_odom.twist.covariance[14] = 0.00; // Z velocity
+        wheel_odom.twist.covariance[21] = 0.00; // Roll velocity
+        wheel_odom.twist.covariance[28] = 0.00; // Pitch velocity
+        wheel_odom.twist.covariance[35] = 0.001; // Yaw velocity
+
         /***********************************/
         
         /*******IMU Readings**************/
@@ -240,6 +284,25 @@ int main(int argc, char **argv)
         Rhip_quat.z = Rhip_orientation.get().getZ();
         Rhip_quat.w = Rhip_orientation.get().getW();
 
+        /** Useless part **/
+        // tf::quaternionMsgToTF(Rhip_quat, tf_quat);
+        
+        // rot_quat.setRPY(0,0,0);
+        // tf_quat = tf_quat*rot_quat;
+        // tf_quat.normalize();
+        // rot_quat.setRPY(0,0,0);
+        // tf_quat = tf_quat*rot_quat;
+        // tf_quat.normalize(); // normalize the quaternion in case it is not normalized
+        //the tf::Quaternion has a method to acess roll pitch and yaw
+        // tf::Matrix3x3(tf_quat).getRPY(roll, pitch, yaw);
+        // ROS_INFO("Roll: %f", roll);
+        // ROS_INFO("Pitch: %f", pitch);
+        // ROS_INFO("Yaw: %f", yaw);
+        // tf_quat.setRPY(0, pitch, yaw); //Adapting HW values to ROS coordinate frames
+        //tf_quat.setEulerZYX(yaw,roll,pitch);
+        //tf::quaternionTFToMsg(tf_quat, Rhip_quat); // Converting tf quaternion in to geometry_msgs quaternion
+        /*************************/
+
         // Right wheel orientation
         const auto& Rwheel_orientation = wheel_feedback[1].imu().orientation(); // Right wheel orientation
         Rwheel_quat.x = Rwheel_orientation.get().getX();
@@ -247,27 +310,8 @@ int main(int argc, char **argv)
         Rwheel_quat.z = Rwheel_orientation.get().getZ();
         Rwheel_quat.w = Rwheel_orientation.get().getW();
         
-        /** Useless part **/
-        tf::quaternionMsgToTF(Rwheel_quat, tf_quat);
-        
-        rot_quat.setRPY(0,0,0);
-        tf_quat = tf_quat*rot_quat;
-        tf_quat.normalize();
-        rot_quat.setRPY(0,0,0);
-        tf_quat = tf_quat*rot_quat;
-        tf_quat.normalize(); // normalize the quaternion in case it is not normalized
-        //the tf::Quaternion has a method to acess roll pitch and yaw
-        tf::Matrix3x3(tf_quat).getRPY(roll, pitch, yaw);
-        ROS_INFO("Roll: %f", roll);
-        ROS_INFO("Pitch: %f", pitch);
-        ROS_INFO("Yaw: %f", yaw);
-        //tf_quat.setRPY(roll, pitch, yaw+M_PI/2); //Adapting HW values to ROS coordinate frames
-        //tf_quat.setEulerZYX(yaw,roll,pitch);
-        //tf::quaternionTFToMsg(tf_quat, Rwheel_quat); // Converting tf quaternion in to geometry_msgs quaternion
-        /*************************/
 
-
-         // Left wheel orientation
+        // Left wheel orientation
         const auto& Lwheel_orientation = wheel_feedback[0].imu().orientation(); // Left wheel orientation
         Lwheel_quat.x = Lwheel_orientation.get().getX();
         Lwheel_quat.y = Lwheel_orientation.get().getY();

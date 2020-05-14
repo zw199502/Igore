@@ -81,15 +81,11 @@ private:
     float igor_pos_y = 0;
     float igor_vel_x = 0;
     float igor_vel_y = 0;
-    //float robot_center_pos_x = 0;
-    //float robot_center_pos_y = 0;
-    //float robot_center_pos_z = 0;
     float igor_center_position = 0;
     float igor_center_vel = 0;
     
     
     //ros::Duration dt{0}; //sampling time
-    //ros::Duration dt2{0}; 
 
     double roll, pitch, yaw = 0.0;
     std_msgs::Float64 trq_r;
@@ -106,15 +102,8 @@ private:
 
     float CoG_angle, leanAngle = 0;
 
-    //double CoG_angle2 = 0;
     float CoG_angle_filtered =0;
-    //float CoG_angle3 = 0;
-    //float CoG_last_angle = 0;
-    //float CoG_pitch_vel = 0;
-    //float CoG_last_pitch_vel = 0;
-    //float CoG_last_angle2 = 0;
     float CoG_angle_vel = 0;
-    //float CoG_last_pitch_vel2 = 0;
 
     float CoM_acc_x;
     float CoM_acc_y;
@@ -122,44 +111,26 @@ private:
     float ground_level = 0;
     float alpha = 0;
 
-    //ros::Time now;
-    //ros::Time last_time;
-    //ros::Time now2;
-    //ros::Time last_time2;
-    //ros::Time time_strt;
-    //ros::Duration time_finsh;
-
-
 
 
     
     float filt1 = 0.02817; // LPF const.
     float filt2 = 0.9718; // LPF const.
     
-    // float filt_out_r = 0.0;
-    // float filt_in_r = 0.0;
-    // float last_filt_out_r = 0.0;
-    // float last_filt_in_r = 0.0;
-    // float filt_out_l = 0.0;
-    // float filt_in_l = 0.0;
-    // float last_filt_out_l = 0.0;
-    // float last_filt_in_l = 0.0;
+  
     float vel_filt_out = 0;
     float vel_filt_in = 0;
     float last_vel_filt_out = 0.0;
     float last_vel_filt_in = 0.0;
 
-    // float pitch_filt_out = 0;
-    // float pitch_filt_in = 0;
-    // float last_pitch_filt_out = 0.0;
-    // float last_pitch_filt_in = 0.0;
+   
 
 
 
 
-    //geometry_msgs::Twist vel_cmnd;
+    
     geometry_msgs::Point ref_origin;
-    //geometry_msgs::Point p;
+    
     
     tf::Quaternion quat;
 
@@ -181,11 +152,10 @@ private:
     ros::Publisher  zram_pub; // creating ROS publisher
     ros::Publisher  f_pub; // creating ROS publisher
     
-    //ros::Publisher  marker_pub;
-    //ros::Publisher  pose_pub;  
+
 
     void body_imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
-    void joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg);
+    //void joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg);
     void odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
     void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
     void statePub (geometry_msgs::Vector3 x);
@@ -213,7 +183,6 @@ private:
     Eigen::Vector3d groundPoint;
     Eigen::Vector3d CoM_vec;
     Eigen::Vector3d CoM_line;
-    //Eigen::Vector3d unit_vec;
     Eigen::Matrix3d pitchRotEigen;
 
     Eigen::MatrixXd M_h = Eigen::MatrixXd(3,3);

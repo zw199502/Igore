@@ -6,25 +6,32 @@ void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
    
     CoG_Position = msg->point;
 
+    CoM_vec << CoG_Position.x, CoG_Position.y, CoG_Position.z;
+    pitchRotation.setRPY(0,basePitch,0); // Setting Pitch rotation matrix
+    tf::matrixTFToEigen(pitchRotation, pitchRotEigen); // Converting tf matrix to Eigen matrix
+
     try
     { 
-       transformStamped = tfBuffer.lookupTransform("odom", "robot_center_link" , ros::Time(0));
-       centerLinkTranslation = transformStamped.transform.translation;
-       centerLinkRotation = transformStamped.transform.rotation;
+        leftLegTransformStamped = leftLegTfBuffer.lookupTransform("base_link", "L_wheelActuator" , ros::Time(0));
+        rightLegTransformStamped = rightLegTfBuffer.lookupTransform("base_link", "R_wheelActuator" , ros::Time(0));
     }
     catch (tf2::TransformException &ex) 
     {
         ROS_WARN("%s",ex.what());
     }
 
-    tf::quaternionMsgToTF(centerLinkRotation, quat1); // geometry_msgs::Quaternion is transformed to a tf::Quaternion
-    quat1.normalize(); // normalize the quaternion in case it is not normalized
-    tf::Matrix3x3(quat1).getRPY(roll, pitch, yaw); // Get roll, pitch, and yaw from the quaternion
+    leftLegTranslation << leftLegTransformStamped.transform.translation.x, leftLegTransformStamped.transform.translation.y, leftLegTransformStamped.transform.translation.z;
+    rightLegTranslation << rightLegTransformStamped.transform.translation.x, rightLegTransformStamped.transform.translation.y, rightLegTransformStamped.transform.translation.z;
+    // Find the mean of the two legs' translation vectors in base_link frame
+    groundPoint = 0.5*(leftLegTranslation+rightLegTranslation);
+    //Get the vector starting from the "ground point" and ending at the position of the current center of mass
+    CoM_line = CoM_vec - groundPoint;
+    // Rotate it according to the current pitch angle of Igor
+    CoM_line = pitchRotEigen * CoM_line; 
+    // Lean/Pitch angle of CoM from the wheel base 
+    leanAngle = atan2(CoM_line.x(), CoM_line.z());
 
-    CoG_pitch = (atan2(CoG_Position.x, CoG_Position.z) + pitch);
-    CoG_pitch = floorf(CoG_pitch*10000)/10000;
-
-    CoGVector.push_back(CoG_pitch);
+    CoGVector.push_back(leanAngle);
     CoG_pitch = (f4.filter(CoGVector,0));
 
     pitchVector.push_back(CoG_pitch);
@@ -95,10 +102,10 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     igorState(1) = 0*floorf(baseYaw*10000)/10000;
     igorState(4) = 0*baseYawVelocity;
 
-    igorState(2) = basePitch;
+    igorState(2) = CoG_pitch;
     igorState(5) = basePitchVelocity;
 
-    plot_vector.x = basePitch;
+    plot_vector.x = CoG_pitch;
     //plot_vector.y = CoG_pitch;
 
     //CT_controller(igorState); // Calling CT controller
@@ -194,11 +201,11 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
 
 void PID_controller(){
 
-    pos_error = (-0.008)+igorState(2);
+    pos_error = (-0.0+igorState(2))*(180/M_PI); //Converting from rad to deg
     error_d = (pos_error-last_err)/0.002;
     last_err = pos_error;
     error_i += pos_error*0.002;
-    trq_r = trq_l = ((pos_error*kp)+(error_d*kd)+(error_i*ki));; 
+    trq_r = trq_l = ((pos_error*1)+(error_d*10)+(error_i*0));; 
     
     rightTrqVector.push_back(trq_r);
     trq_r = f2.filter(rightTrqVector,0);
@@ -305,7 +312,9 @@ int main(int argc, char **argv)
     ros::Timer timer = nh.createTimer(ros::Duration(0.002), igorConfig); // Running at 500Hz in a separate thread
     
     
-    tf2Listener = new tf2_ros::TransformListener(tfBuffer);
+    leftLegTfListener = new tf2_ros::TransformListener(leftLegTfBuffer);
+    rightLegTfListener = new tf2_ros::TransformListener(rightLegTfBuffer);
+    
     publisher = nh.advertise<geometry_msgs::Vector3>( "/igor/plotVec", 5);
 
     // Computed-torque controller's gain

@@ -12,6 +12,7 @@
 #include "geometry_msgs/PointStamped.h"
 #include "geometry_msgs/Point.h"
 #include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 #include <tf2_ros/buffer.h>
 #include <geometry_msgs/TransformStamped.h>
 #include "geometry_msgs/Quaternion.h"
@@ -36,8 +37,8 @@ std::shared_ptr<hebi::Group> knee_group = NULL;
 std::shared_ptr<hebi::Group> hip_group = NULL;
 std::shared_ptr<hebi::Group> wheel_group = NULL;
 
-ros::Subscriber CoG_sub;
-ros::Subscriber odom_sub;
+ros::Subscriber CoG_sub, odom_sub;
+//ros::Subscriber odom_sub;
 ros::Publisher  publisher;
 
 void CT_controller(Eigen::VectorXf vec); // Function prototype, its declaration
@@ -46,14 +47,19 @@ void ref_update();
 
 
 geometry_msgs::Point CoG_Position;
-float CoG_pitch = 0; // Pitch angle of CoG
+float CoG_pitch, leanAngle = 0; // Pitch angle of CoG
 float CoG_pitch_vel = 0; // pitch velocity of CoG
 double roll, pitch, yaw = 0.0;
 double baseRoll, basePitch, baseYaw, baseX, baseY = 0.0;
 float basePitchVelocity, baseYawVelocity, baseXVelocity, baseYVelocity = 0;
-tf2_ros::Buffer tfBuffer;
-tf2_ros::TransformListener* tf2Listener;
-geometry_msgs::TransformStamped transformStamped;
+
+tf2_ros::Buffer leftLegTfBuffer, rightLegTfBuffer;
+tf2_ros::TransformListener* leftLegTfListener;
+tf2_ros::TransformListener* rightLegTfListener;
+
+tf::Matrix3x3 pitchRotation;
+
+geometry_msgs::TransformStamped transformStamped, leftLegTransformStamped, rightLegTransformStamped;
 geometry_msgs::Vector3 centerLinkTranslation;
 geometry_msgs::Quaternion centerLinkRotation;
 geometry_msgs::Quaternion baseLinkRotation;
@@ -70,6 +76,13 @@ Eigen::MatrixXf pos_vec = Eigen::MatrixXf(1,2);
 Eigen::MatrixXf vel_vec = Eigen::MatrixXf(1,2);
 Eigen::VectorXf igorState = Eigen::VectorXf(6);
 Eigen::VectorXf refState = Eigen::VectorXf(6);
+
+Eigen::Vector3d rightLegTranslation;
+Eigen::Vector3d leftLegTranslation;
+Eigen::Vector3d groundPoint;
+Eigen::Vector3d CoM_vec;
+Eigen::Vector3d CoM_line;
+Eigen::Matrix3d pitchRotEigen;
 
 Eigen::MatrixXd M_h = Eigen::MatrixXd(3,3);
 Eigen::Vector3d H_h;

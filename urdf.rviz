@@ -56,7 +56,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.5
+    - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
@@ -172,45 +172,45 @@ Visualization Manager:
       Frames:
         All Enabled: false
         L_baseActuator:
-          Value: false
+          Value: true
         L_kneeActuator:
-          Value: false
+          Value: true
         L_lowerleg:
-          Value: false
+          Value: true
         L_upperleg:
-          Value: false
+          Value: true
         L_wheel:
           Value: true
         L_wheelActuator:
-          Value: false
+          Value: true
         LhipActuator_imu_link:
-          Value: false
+          Value: true
         LwheelActuator_imu_link:
-          Value: false
+          Value: true
         R_baseActuator:
-          Value: false
+          Value: true
         R_kneeActuator:
-          Value: false
+          Value: true
         R_lowerleg:
-          Value: false
+          Value: true
         R_upperleg:
-          Value: false
+          Value: true
         R_wheel:
           Value: true
         R_wheelActuator:
-          Value: false
+          Value: true
         RhipActuator_imu_link:
-          Value: false
+          Value: true
         RwheelActuator_imu_link:
-          Value: false
+          Value: true
         base_link:
           Value: true
         chassis:
-          Value: false
+          Value: true
         imu_link:
           Value: false
         odom:
-          Value: true
+          Value: false
         robot_center_link:
           Value: false
       Marker Scale: 1
@@ -288,7 +288,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.636731147766113
+      Distance: 3.4377896785736084
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -303,10 +303,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4397977590560913
+      Pitch: 0.8647969961166382
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.04529372602701187
+      Yaw: 5.753440856933594
     Saved:
       - Class: rviz/Orbit
         Distance: 2.6209158897399902

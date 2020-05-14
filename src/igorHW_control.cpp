@@ -24,6 +24,9 @@ void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
     CoG_pitch = (atan2(CoG_Position.x, CoG_Position.z) + pitch);
     CoG_pitch = floorf(CoG_pitch*10000)/10000;
 
+    CoGVector.push_back(CoG_pitch);
+    CoG_pitch = (f4.filter(CoGVector,0));
+
     pitchVector.push_back(CoG_pitch);
     CoG_pitch_vel = (f1.filter(pitchVector,0))/0.002; // Divide by sampling time
 
@@ -35,12 +38,12 @@ void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
         CoG_pitch_vel = -5;
     }
 
-    // yawVector.push_back(yaw);
-    // yawVelocity = (f2.filter(yawVector,0))/0.002; // Divide by sampling time
+    
 
     
 
-    plot_vector.x = CoG_pitch;
+    //plot_vector.x = CoG_pitch_vel;
+    //plot_vector.y = CoG_pitch;
     
 
 
@@ -48,7 +51,7 @@ void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
     // ROS_INFO("Center link roll: %f", roll);
     // ROS_INFO("Center link pitch: %f", pitch);
     // ROS_INFO("Center link yaw: %f", yaw);
-    // ROS_INFO("CoG pitch: %f", CoG_pitch);
+    ROS_INFO("CoG pitch: %f", CoG_pitch);
     // ROS_INFO("Center link X: %f", centerLinkTranslation.x);
     
 
@@ -72,6 +75,7 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     baseLinearVelocity = baseTwist.linear;
     baseAngularVelocity = baseTwist.angular;
 
+    basePitchVelocity = baseAngularVelocity.y;
     baseYawVelocity = baseAngularVelocity.z;
     baseXVelocity = baseLinearVelocity.x;
     baseYVelocity = baseLinearVelocity.y;
@@ -91,11 +95,14 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     igorState(1) = 0*floorf(baseYaw*10000)/10000;
     igorState(4) = 0*baseYawVelocity;
 
-    igorState(2) = CoG_pitch;
-    igorState(5) = CoG_pitch_vel;
+    igorState(2) = basePitch;
+    igorState(5) = basePitchVelocity;
 
-    CT_controller(igorState); // Calling CT controller
+    plot_vector.x = basePitch;
+    //plot_vector.y = CoG_pitch;
 
+    //CT_controller(igorState); // Calling CT controller
+    PID_controller();
 
 } // End of odom_callback
 
@@ -105,7 +112,7 @@ void ref_update(){
     // Reference states
     refState(0) = 0.0; // Center Position 
     refState(1) = 0.0; // Yaw
-    refState(2) = 0.0; // Pitch
+    refState(2) = -0.0674; // Pitch
     refState(3) = 0.0; // Center velocity
     refState(4) = 0.0; // Yaw velocity
     refState(5) = 0.0; // Pitch velocity
@@ -120,7 +127,6 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     
     ref_update();
 
-    //L = CoG_Position.z - igor_position.z;
 
     velocities(0) = vec(3); // Center velocity
     velocities(1) = vec(4); // Yaw velocity
@@ -161,18 +167,55 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     feedbck = Kv*Ev + Kp*Ep; 
     output_trq = E_h_inv*(M_h*(feedbck)+ H_h + V_h*velocities + G_h);
     
-    trq_r = output_trq(1); // Right wheel torque
-    trq_l = output_trq(0); // Left wheel torque
+    trq_r = 10*output_trq(1); // Right wheel torque
+    trq_l = 10*output_trq(0); // Left wheel torque
 
-    plot_vector.y = trq_r;
+    // rightTrqVector.push_back(trq_r);
+    // trq_r = f2.filter(rightTrqVector,0);
+    // leftTrqVector.push_back(trq_l);
+    // trq_l = f3.filter(leftTrqVector,0); 
+    
     plot_vector.z = trq_l;
 
-    publisher.publish(plot_vector);
+    //ROS_INFO("Right Torque %f", trq_r);
+    //ROS_INFO("Left Torque %f", trq_l);
+
+    (*wheelGroupCommand).clear(); // Clearing the previous group commands
+    (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
+    (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
+    //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+
+    //publisher.publish(plot_vector);
 
 
     return;
 
 } // End of CT controller
+
+void PID_controller(){
+
+    pos_error = (-0.008)+igorState(2);
+    error_d = (pos_error-last_err)/0.002;
+    last_err = pos_error;
+    error_i += pos_error*0.002;
+    trq_r = trq_l = ((pos_error*kp)+(error_d*kd)+(error_i*ki));; 
+    
+    rightTrqVector.push_back(trq_r);
+    trq_r = f2.filter(rightTrqVector,0);
+    leftTrqVector.push_back(trq_l);
+    trq_l = f3.filter(leftTrqVector,0); 
+    // ROS_INFO("Pitch %f", igorState(2));
+    // ROS_INFO("Trq %f", trq_l);
+
+    (*wheelGroupCommand).clear(); // Clearing the previous group commands
+    (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
+    (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
+    //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+
+    publisher.publish(plot_vector);
+
+
+}// End of PID controller
 
 void igorConfig(const ros::TimerEvent& e) // Lower body configuration
 {
@@ -243,20 +286,20 @@ int main(int argc, char **argv)
     wheelGroupCommand = new hebi::GroupCommand(wheel_group->size());
 
     // Actuator's gain upload
-    (*kneeGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWkneeGains.xml");
-    (*kneeGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWkneeSafetyParam.xml");
-    bool kneeGainSuccess = knee_group->sendCommandWithAcknowledgement(*kneeGroupCommand);
-    std::cout<<"Knee Gains Uploaded:  "<< kneeGainSuccess << std::endl;
+    // (*kneeGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWkneeGains.xml");
+    // (*kneeGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWkneeSafetyParam.xml");
+    // bool kneeGainSuccess = knee_group->sendCommandWithAcknowledgement(*kneeGroupCommand);
+    // std::cout<<"Knee Gains Uploaded:  "<< kneeGainSuccess << std::endl;
 
-    (*hipGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWhipGains.xml");
-    (*hipGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWhipSafetyParam.xml");
-    bool hipGainSuccess = hip_group->sendCommandWithAcknowledgement(*hipGroupCommand);
-    std::cout<<"Hip Gains Uploaded:  "<< hipGainSuccess << std::endl;
-    
-    
+    // (*hipGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWhipGains.xml");
+    // (*hipGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWhipSafetyParam.xml");
+    // bool hipGainSuccess = hip_group->sendCommandWithAcknowledgement(*hipGroupCommand);
+    // std::cout<<"Hip Gains Uploaded:  "<< hipGainSuccess << std::endl;
 
- 
-    
+    (*wheelGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWwheelGains.xml");
+    bool wheelGainSuccess = wheel_group->sendCommandWithAcknowledgement(*wheelGroupCommand);
+    std::cout<<"Wheel Gains Uploaded:  "<< wheelGainSuccess << std::endl;
+        
     /***********************************************/
 
     ros::Timer timer = nh.createTimer(ros::Duration(0.002), igorConfig); // Running at 500Hz in a separate thread
@@ -307,7 +350,7 @@ int main(int argc, char **argv)
 
 
 
-    ros::Duration(1).sleep(); // Sleep for 1 seconds
+    ros::Duration(2).sleep(); // Sleep for 2 seconds
     
 
     CoG_sub = nh.subscribe<geometry_msgs::PointStamped>("/cog/robot",2, CoG_callback);

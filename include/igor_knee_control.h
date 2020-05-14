@@ -53,17 +53,23 @@ private:
 
     geometry_msgs::Quaternion  igor_orient;  // Quaternion type variable
     geometry_msgs::PoseWithCovariance igor_pose;
-    //geometry_msgs::PoseStamped robot_pose;
     geometry_msgs::TwistWithCovariance igor_twist;
     geometry_msgs::Point igor_position;
     geometry_msgs::Point CoG_Position;
     geometry_msgs::Vector3 igor_linear_vel;
+    
     geometry_msgs::TransformStamped transformStamped;
-    //visualization_msgs::Marker marker;
+    geometry_msgs::TransformStamped leftLegTransformStamped;
+    geometry_msgs::TransformStamped rightLegTransformStamped;
 
 
     tf2_ros::Buffer tfBuffer;
     tf2_ros::TransformListener tf2Listener{tfBuffer};
+
+    tf2_ros::Buffer leftLegTfBuffer;
+    tf2_ros::TransformListener leftLegTfListener{leftLegTfBuffer};
+    tf2_ros::Buffer rightLegTfBuffer;
+    tf2_ros::TransformListener rightLegTfListener{rightLegTfBuffer};
     
     
     
@@ -98,7 +104,8 @@ private:
     double R_knee_vel;
     float L = 0;
 
-    float CoG_angle = 0;
+    float CoG_angle, leanAngle = 0;
+
     //double CoG_angle2 = 0;
     float CoG_angle_filtered =0;
     //float CoG_angle3 = 0;
@@ -157,8 +164,7 @@ private:
     tf::Quaternion quat;
 
     ros::NodeHandle nh_; // creating ROS NodeHandle
-    ros::Subscriber sub_center_imu; // creating ROS subscriber
-    ros::Subscriber sub_joint_states; // creating ROS subscriber
+    ros::Subscriber sub_body_imu; // creating ROS subscriber
     ros::Subscriber sub_odom; // creating ROS subscriber
     ros::Subscriber sub_CoG; // creating ROS subscriber
     
@@ -178,7 +184,7 @@ private:
     //ros::Publisher  marker_pub;
     //ros::Publisher  pose_pub;  
 
-    void center_imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
+    void body_imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
     void joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg);
     void odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
     void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
@@ -202,9 +208,13 @@ private:
     Eigen::Vector3d zram;
     Eigen::Vector3d gravity_vec{0,0,-9.81};
     Eigen::Vector3d f;
-    //Eigen::Vector3d CoM_vec;
+    Eigen::Vector3d rightLegTranslation;
+    Eigen::Vector3d leftLegTranslation;
+    Eigen::Vector3d groundPoint;
+    Eigen::Vector3d CoM_vec;
+    Eigen::Vector3d CoM_line;
     //Eigen::Vector3d unit_vec;
-    //Eigen::MatrixXd rot = Eigen::MatrixXd(3,3);
+    Eigen::Matrix3d pitchRotEigen;
 
     Eigen::MatrixXd M_h = Eigen::MatrixXd(3,3);
     Eigen::Vector3d H_h;
@@ -216,12 +226,12 @@ private:
     Eigen::Vector3d velocities;
     Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
     Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
-    float Kp1 = 1.5; // Linear postion gain
+    float Kp1 = 2; // Linear postion gain
     float Kp2 = 30; // Yaw gain
-    float Kp3 = 85; // Pitch gain
+    float Kp3 = 95; // Pitch gain
     float Kv1 = 0.75; // Linear velocity gain
     float Kv2 = 10; // Yaw speed gain
-    float Kv3 = 10; // Pitch speed gain
+    float Kv3 = 15; // Pitch speed gain
     Eigen::Vector3d feedbck;
     Eigen::Vector2d output_trq;
 
@@ -229,6 +239,7 @@ private:
     tf::Vector3 CoM_tf;
     tf::Vector3 unit_tf;
     tf::Vector3 rot_axis{0,1,0};
+    tf::Matrix3x3 pitchRotation;
     
 
     ros::ServiceClient client;

@@ -1,14 +1,16 @@
 #include "igor_knee_control.h"
 
-
+/***  This node is used to control Igor in Gazebo simulator. It has two controllers 1. LQR, 2. Computed Troque controller.
+ *    Call one controller at a time.
+ * 
+ *    ***/
 
 
 
 igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandle) //Constructor
 {
-    sub_center_imu = nh_.subscribe<sensor_msgs::Imu>("/igor/center_imu/data",1, &igor_knee_control::center_imu_callback,this);
-    sub_joint_states = nh_.subscribe<sensor_msgs::JointState>("/igor/joint_states",1, &igor_knee_control::joint_states_callback,this);
-    sub_odom = nh_.subscribe<nav_msgs::Odometry>("/igor/center",1, &igor_knee_control::odom_callback,this);
+    sub_body_imu = nh_.subscribe<sensor_msgs::Imu>("/igor/body_imu/data",1, &igor_knee_control::body_imu_callback,this);
+    sub_odom = nh_.subscribe<nav_msgs::Odometry>("/igor/centerOdom",1, &igor_knee_control::odom_callback,this,ros::TransportHints().tcpNoDelay());
     sub_CoG = nh_.subscribe<geometry_msgs::PointStamped>("/cog/robot",1, &igor_knee_control::CoG_callback,this);
     
     state_pub = nh_.advertise<geometry_msgs::Vector3>( "/igor/stateVec", 1 );
@@ -21,8 +23,6 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     Rknee_pub = nh_.advertise<std_msgs::Float64>( "/igor/R_kfe_joint_position_controller/command", 1 );
     Lhip_pub = nh_.advertise<std_msgs::Float64>( "/igor/L_hfe_joint_position_controller/command", 1 );
     Rhip_pub = nh_.advertise<std_msgs::Float64>( "/igor/R_hfe_joint_position_controller/command", 1 );
-    //marker_pub = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-    //pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("/igor/robot_pose", 1);
     client = nh_.serviceClient<std_srvs::Empty>("/gazebo/reset_world"); // service client of gazebo service
 
     // LQR gains
@@ -85,15 +85,10 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     ref_state(4) = 0; // yaw velocity
     ref_state(5) = 0.0; // Pitch velocity
     
-
-    //unit_vec << 0, 0, 1;
-    //tf::vectorEigenToTF(unit_vec, unit_tf);
-    //ref_origin.x = ref_origin.y = ref_origin.z = 0;
-    
         
 } // End of constructor
 
-void igor_knee_control::center_imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
+void igor_knee_control::body_imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
 {
         
 
@@ -114,15 +109,12 @@ void igor_knee_control::center_imu_callback(const sensor_msgs::Imu::ConstPtr &ms
      
     
     //igor_state(2) = floorf(pitch*10000)/10000;
-    //igor_state(5) = pitch_vel_y;
+    igor_state(5) = pitch_vel_y;
     
     igor_state(1) = floorf(yaw*10000)/10000;
     igor_state(4) = yaw_vel_z; 
 
     ROS_INFO("Imu Pitch: %f",pitch);
-
-    //this->lqr_controller(igor_state);
-    //this->CT_controller(igor_state);
 
     
 }// End of imu_callback
@@ -177,35 +169,45 @@ void igor_knee_control::odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
 }// End of odom_callback
 
-void igor_knee_control::joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg) // Joint State Subscriber
-{
-    joint_pos = msg->position;
-    joint_vel = msg->velocity;
-
-    L_knee_pos = joint_pos[1];
-    L_knee_vel = joint_vel[1];
-    R_knee_pos = joint_pos[4];
-    R_knee_vel = joint_vel[4];
-
-    //igor_state(3) = floorf(L_knee_pos*10000)/10000;
-    //igor_state(7) = floorf(L_knee_vel*10000)/10000;
-
-
-
-}// End of joint_states_callback
 
 void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
 {
 
     CoG_Position = msg->point;
+    CoM_vec << CoG_Position.x, CoG_Position.y, CoG_Position.z;
+    pitchRotation.setRPY(0,pitch,0); // Setting Pitch rotation matrix
+    tf::matrixTFToEigen(pitchRotation, pitchRotEigen); // Converting tf matrix to Eigen matrix
   
-    CoG_angle = atan2(CoG_Position.x, CoG_Position.z) + pitch;
-    CoG_angle = floorf(CoG_angle*10000)/10000;
+    // CoG_angle = atan2(CoG_Position.x, CoG_Position.z) + pitch;
+    // CoG_angle = floorf(CoG_angle*10000)/10000;
 
+    try
+    { 
+        leftLegTransformStamped = leftLegTfBuffer.lookupTransform("base_link", "L_wheelActuator" , ros::Time(0));
+        rightLegTransformStamped = rightLegTfBuffer.lookupTransform("base_link", "R_wheelActuator" , ros::Time(0));
+    }
+    catch (tf2::TransformException &ex) 
+    {
+        ROS_WARN("%s",ex.what());
+    }
+
+    leftLegTranslation << leftLegTransformStamped.transform.translation.x, leftLegTransformStamped.transform.translation.y, leftLegTransformStamped.transform.translation.z;
+    rightLegTranslation << rightLegTransformStamped.transform.translation.x, rightLegTransformStamped.transform.translation.y, rightLegTransformStamped.transform.translation.z;
+    // Find the mean of the two legs' translation vectors in base_link frame
+    groundPoint = 0.5*(leftLegTranslation+rightLegTranslation);
+    //Get the vector starting from the "ground point" and ending at the position of the current center of mass
+    CoM_line = CoM_vec - groundPoint;
+    // Rotate it according to the current pitch angle of Igor
+    CoM_line = pitchRotEigen * CoM_line; 
+    // Lean/Pitch angle of CoM from the wheel base 
+    leanAngle = atan2(CoM_line.x(), CoM_line.z());
+
+    //std::cout<<"Lean angle: " << std::endl << leanAngle << std::endl;
+    
     /**#####################################################**/
-
-    // robot_center_pos << igor_position.x, igor_position.y, igor_position.z;
-
+    
+    
+    //*** ZRAM Part ***////
     try
     { 
         transformStamped = tfBuffer.lookupTransform("map", "robot_center_link" , ros::Time(0));
@@ -252,25 +254,10 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
     //f_pub.publish(f_vec);
 
 
-    // CoM_vec = (CoM_pos - robot_center_pos);
-
-  
-
-    // tf::vectorEigenToTF(CoM_vec,CoM_tf); // converting Eigen Vector to tf Vector
-
-  
-
-    //CoM_tf.normalize();
-    // // CoG_angle2 = atan2(rot_axis.dot(unit_tf.cross(CoM_tf)), CoM_tf.dot(unit_tf)); // Correct pitch angle
-    
-    
-    
-    // // CoG_angle2 = floorf(CoG_angle2*1000)/1000;
-
     /**#####################################################**/
 
     
-    my_data1.push_back(CoG_angle);
+    my_data1.push_back(leanAngle);
     
 
     CoG_angle_filtered = f1.filter(my_data1, 0);
@@ -292,7 +279,7 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
     ROS_INFO("CoG angle: %f", CoG_angle_filtered);
     
     igor_state(2) = CoG_angle_filtered;   
-    igor_state(5) = CoG_angle_vel;
+    //igor_state(5) = CoG_angle_vel;
  
 
     //this->lqr_controller(igor_state);
@@ -316,13 +303,13 @@ void igor_knee_control::statePub2 (geometry_msgs::Vector3 x) // State Vector Pub
 
 }
 
-void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //State-feedback controller
+void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedback controller
 {
     if (igor_state(2)>= -0.35 && igor_state(2) <= 0.35){
         
         igor_knee_control::ref_update();
 
-        trq_r.data =  ((k_r*(vec-ref_state)).value()); // taking the scalar value of the eigen-matrx and filtering it through LPF
+        trq_r.data =  ((k_r*(vec-ref_state)).value()); // taking the scalar value of the eigen-matrx
       
         
         trq_l.data =  ((k_l*(vec-ref_state)).value());
@@ -428,9 +415,9 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
 
 void igor_knee_control::ref_update()
 {
-    //ref_state(0) = igor_state(0)+1; // forward position
-    ref_state(0) = 2*(sin(0.5*ros::Time::now().toSec())); // forward position
-    //ref_state(1) = M_pi/2*(cos(0.3*ros::Time::now().toSec())); // yaw
+    ref_state(0) = igor_state(0)+1; // forward position
+    //ref_state(0) = 2*(sin(0.5*ros::Time::now().toSec())); // forward position
+    ref_state(1) = M_pi/2*(cos(0.3*ros::Time::now().toSec())); // yaw
     knee_ref.data = 0*2.0*abs(sin(0.3*ros::Time::now().toSec()));
     hip_ref.data = 0*-1.0*abs(sin(0.3*ros::Time::now().toSec()));
     //knee_ref.data = 0.3;

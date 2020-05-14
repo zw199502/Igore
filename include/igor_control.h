@@ -46,7 +46,7 @@ private:
     float sp1 = -0.0345; // position set point for PID
     float sp2 = 0.03401*70; // position set point for Poly PD
     float error;
-    float last_err=0;
+    float last_err = 0;
     float error_d;
     float error_i = 0;
     float kp = 15; // PID gains

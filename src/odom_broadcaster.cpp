@@ -21,21 +21,9 @@ void odom_broadcaster::odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     transform_.transform.rotation.z = igor_robot_pose_.pose.orientation.z;
     transform_.transform.rotation.w = igor_robot_pose_.pose.orientation.w;
 
-    // transform2_.header.stamp = msg->header.stamp;
-    // transform2_.header.frame_id = "robot_center_link";
-    // transform2_.child_frame_id = "base_link";
-    // transform2_.transform.translation.x = -0.02;
-    // transform2_.transform.translation.y = 0;
-    // transform2_.transform.translation.z = 0.7;
-    // transform2_.transform.rotation.x = 0;
-    // transform2_.transform.rotation.y = 0;
-    // transform2_.transform.rotation.z = 0;
-    // transform2_.transform.rotation.w =1;
-
-
 
     br.sendTransform(transform_);
-    //br.sendTransform(transform2_);
+    
 
 }// End of odom_callback
 

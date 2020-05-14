@@ -41,6 +41,7 @@ ros::Subscriber odom_sub;
 ros::Publisher  publisher;
 
 void CT_controller(Eigen::VectorXf vec); // Function prototype, its declaration
+void PID_controller();
 void ref_update();
 
 
@@ -49,7 +50,7 @@ float CoG_pitch = 0; // Pitch angle of CoG
 float CoG_pitch_vel = 0; // pitch velocity of CoG
 double roll, pitch, yaw = 0.0;
 double baseRoll, basePitch, baseYaw, baseX, baseY = 0.0;
-float baseYawVelocity, baseXVelocity, baseYVelocity = 0;
+float basePitchVelocity, baseYawVelocity, baseXVelocity, baseYVelocity = 0;
 tf2_ros::Buffer tfBuffer;
 tf2_ros::TransformListener* tf2Listener;
 geometry_msgs::TransformStamped transformStamped;
@@ -82,10 +83,10 @@ Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
 Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
 float Kp1 = 1.5; // Linear postion gain
 float Kp2 = 30; // Yaw gain
-float Kp3 = 85; // Pitch gain
+float Kp3 = 15; // Pitch gain
 float Kv1 = 0.75; // Linear velocity gain
 float Kv2 = 10; // Yaw speed gain
-float Kv3 = 10; // Pitch speed gain
+float Kv3 = 1; // Pitch speed gain
 Eigen::Vector3d feedbck;
 Eigen::Vector2d output_trq;
 float L = 0.513; // CoM height
@@ -104,12 +105,27 @@ float leftHipPos = 0;
 float ROSrightHipPos = 0;
 float rightHipPos = 0;
 
-// Window size is 2*m+1 for Savitzky Golay filter
-const int m = 8;
-const int n = 1;
-const int t = m;
+float pos_error = 0;
+float last_err = 0;
+float error_d = 0;
+float error_i = 0;
+float kp = 20; // PID gains
+float kd = 1.5;
+float ki = 1;
 
-gram_sg::SavitzkyGolayFilterConfig sg_conf{m,t,n,1,1};
-gram_sg::SavitzkyGolayFilter f1{sg_conf}, f2{sg_conf};
-boost::circular_buffer<double> pitchVector {boost::circular_buffer<double>((2*m+1),0)}; // Initialize with 0
-boost::circular_buffer<double> yawVector {boost::circular_buffer<double>((2*m+1),0)}; // Initialize with 0
+// Window size is 2*m+1 for Savitzky Golay filter
+const int m1 = 15;
+const int n1 = 1;
+const int t1 = m1;
+const int m2 = 12;
+const int n2 = 0;
+const int t2 = m2;
+const int d = 0;
+
+gram_sg::SavitzkyGolayFilterConfig sg_conf{m1,t1,n1,1,1};
+gram_sg::SavitzkyGolayFilterConfig sg_conf2{m2,t2,n2,d,0.002};
+gram_sg::SavitzkyGolayFilter f1{sg_conf}, f2{sg_conf2}, f3{sg_conf2} , f4{sg_conf2};
+boost::circular_buffer<double> pitchVector {boost::circular_buffer<double>((2*m1+1),0)}; // Initialize with 0
+boost::circular_buffer<double> rightTrqVector {boost::circular_buffer<double>((2*m2+1),0)}; // Initialize with 0
+boost::circular_buffer<double> leftTrqVector {boost::circular_buffer<double>((2*m2+1),0)}; // Initialize with 0
+boost::circular_buffer<double> CoGVector {boost::circular_buffer<double>((2*m2+1),0)}; // Initialize with 0

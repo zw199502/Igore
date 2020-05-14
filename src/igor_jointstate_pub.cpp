@@ -71,45 +71,45 @@ int main(int argc, char **argv)
     ros::Publisher Lwheel_imu_pub = nh_.advertise<sensor_msgs::Imu>("/Lwheel_imu/data", 10); // Left wheel imu publisher
 
     /** IMU covariance **/
-    // Lwheel_imu.orientation_covariance[0] = pow(4.9875951e-5, 2);
-    // Lwheel_imu.orientation_covariance[4] = pow(2.7079396e-5, 2);
-    // Lwheel_imu.orientation_covariance[8] = pow(3.4455115e-5, 2);
-    // Lwheel_imu.angular_velocity_covariance[0] = pow(0.00053151, 2);
-    // Lwheel_imu.angular_velocity_covariance[4] = pow(0.00057182, 2);
-    // Lwheel_imu.angular_velocity_covariance[8] = pow(0.00048372, 2);
-    // Lwheel_imu.linear_acceleration_covariance[0] = pow(0.0061082, 2);
-    // Lwheel_imu.linear_acceleration_covariance[4] = pow(0.0069595, 2);
-    // Lwheel_imu.linear_acceleration_covariance[8] = pow(0.0050193, 2);
+    Lwheel_imu.orientation_covariance[0] = pow(0.005, 2);
+    Lwheel_imu.orientation_covariance[4] = pow(0.005, 2);
+    Lwheel_imu.orientation_covariance[8] = pow(0.005, 2);
+    Lwheel_imu.angular_velocity_covariance[0] = pow(0.001, 2);
+    Lwheel_imu.angular_velocity_covariance[4] = pow(0.001, 2);
+    Lwheel_imu.angular_velocity_covariance[8] = pow(0.001, 2);
+    Lwheel_imu.linear_acceleration_covariance[0] = pow(0.015, 2);
+    Lwheel_imu.linear_acceleration_covariance[4] = pow(0.015, 2);
+    Lwheel_imu.linear_acceleration_covariance[8] = pow(0.015, 2);
 
-    // Rwheel_imu.orientation_covariance[0] = pow(3.6820766e-5, 2);
-    // Rwheel_imu.orientation_covariance[4] = pow(3.3946212e-5, 2);
-    // Rwheel_imu.orientation_covariance[8] = pow(3.1968457e-5, 2);
-    // Rwheel_imu.angular_velocity_covariance[0] = pow(0.00053684, 2);
-    // Rwheel_imu.angular_velocity_covariance[4] = pow(0.00051864, 2);
-    // Rwheel_imu.angular_velocity_covariance[8] = pow(0.00055331, 2);
-    // Rwheel_imu.linear_acceleration_covariance[0] = pow(0.0058694, 2);
-    // Rwheel_imu.linear_acceleration_covariance[4] = pow(0.0068303, 2);
-    // Rwheel_imu.linear_acceleration_covariance[8] = pow(0.0047131, 2);
+    Rwheel_imu.orientation_covariance[0] = pow(0.005, 2);
+    Rwheel_imu.orientation_covariance[4] = pow(0.005, 2);
+    Rwheel_imu.orientation_covariance[8] = pow(0.005, 2);
+    Rwheel_imu.angular_velocity_covariance[0] = pow(0.001, 2);
+    Rwheel_imu.angular_velocity_covariance[4] = pow(0.001, 2);
+    Rwheel_imu.angular_velocity_covariance[8] = pow(0.001, 2);
+    Rwheel_imu.linear_acceleration_covariance[0] = pow(0.015, 2);
+    Rwheel_imu.linear_acceleration_covariance[4] = pow(0.015, 2);
+    Rwheel_imu.linear_acceleration_covariance[8] = pow(0.015, 2);
 
-    Lhip_imu.orientation_covariance[0] = pow(2.4104259e-5, 2);
-    Lhip_imu.orientation_covariance[4] = pow(2.1378862e-5, 2);
-    Lhip_imu.orientation_covariance[8] = pow(2.4027564e-5, 2);
-    Lhip_imu.angular_velocity_covariance[0] = pow(0.00054629, 2);
-    Lhip_imu.angular_velocity_covariance[4] = pow(0.00048276, 2);
-    Lhip_imu.angular_velocity_covariance[8] = pow(0.00054565, 2);
-    Lhip_imu.linear_acceleration_covariance[0] = pow(0.0063116, 2);
-    Lhip_imu.linear_acceleration_covariance[4] = pow(0.0055439, 2);
-    Lhip_imu.linear_acceleration_covariance[8] = pow(0.0046687, 2);
+    Lhip_imu.orientation_covariance[0] = pow(0.005, 2);
+    Lhip_imu.orientation_covariance[4] = pow(0.005, 2);
+    Lhip_imu.orientation_covariance[8] = pow(0.005, 2);
+    Lhip_imu.angular_velocity_covariance[0] = pow(0.001, 2);
+    Lhip_imu.angular_velocity_covariance[4] = pow(0.001, 2);
+    Lhip_imu.angular_velocity_covariance[8] = pow(0.001, 2);
+    Lhip_imu.linear_acceleration_covariance[0] = pow(0.015, 2);
+    Lhip_imu.linear_acceleration_covariance[4] = pow(0.015, 2);
+    Lhip_imu.linear_acceleration_covariance[8] = pow(0.015, 2);
 
-    Rhip_imu.orientation_covariance[0] = pow(2.1639301e-5, 2);
-    Rhip_imu.orientation_covariance[4] = pow(3.5121155e-5, 2);
-    Rhip_imu.orientation_covariance[8] = pow(2.7566188e-5, 2);
-    Rhip_imu.angular_velocity_covariance[0] = pow(0.00055807, 2);
-    Rhip_imu.angular_velocity_covariance[4] = pow(0.00052338, 2);
-    Rhip_imu.angular_velocity_covariance[8] = pow(0.00050967, 2);
-    Rhip_imu.linear_acceleration_covariance[0] = pow(0.0066336, 2);
-    Rhip_imu.linear_acceleration_covariance[4] = pow(0.0061227, 2);
-    Rhip_imu.linear_acceleration_covariance[8] = pow(0.0046339, 2);
+    Rhip_imu.orientation_covariance[0] = pow(0.005, 2);
+    Rhip_imu.orientation_covariance[4] = pow(0.005, 2);
+    Rhip_imu.orientation_covariance[8] = pow(0.005, 2);
+    Rhip_imu.angular_velocity_covariance[0] = pow(0.001, 2);
+    Rhip_imu.angular_velocity_covariance[4] = pow(0.001, 2);
+    Rhip_imu.angular_velocity_covariance[8] = pow(0.001, 2);
+    Rhip_imu.linear_acceleration_covariance[0] = pow(0.015, 2);
+    Rhip_imu.linear_acceleration_covariance[4] = pow(0.015, 2);
+    Rhip_imu.linear_acceleration_covariance[8] = pow(0.015, 2);
     /*****************************************************************///
 
     // Create a hebi Lookup Object
@@ -136,9 +136,9 @@ int main(int argc, char **argv)
     std::shared_ptr<hebi::Group> knee_group = lookup.getGroupFromNames(family, knee_names);
     std::shared_ptr<hebi::Group> wheel_group = lookup.getGroupFromNames(family, wheel_names);
 
-    hip_group->setFeedbackFrequencyHz(550);
-    knee_group->setFeedbackFrequencyHz(550);
-    wheel_group->setFeedbackFrequencyHz(550);
+    hip_group->setFeedbackFrequencyHz(500);
+    knee_group->setFeedbackFrequencyHz(500);
+    wheel_group->setFeedbackFrequencyHz(500);
     
     // providing "*" as the family selects all modules
     //std::shared_ptr<hebi::Group> group = lookup.getGroupFromFamily("*");
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
         
         double dt = (current_time - last_time).toSec(); // Time delta
         if(dt>=1){
-            dt = 0.001818; // 550 hz
+            dt = 0.002; // 500 hz
         }
         
         delta_x = (vx * cos(th)) * dt;
@@ -409,10 +409,10 @@ int main(int argc, char **argv)
 
         // Publishing on the topics
         odom_pub.publish(wheel_odom);
-        Lhip_imu_pub.publish(Lhip_imu);
-        Rhip_imu_pub.publish(Rhip_imu);
         Rwheel_imu_pub.publish(Rwheel_imu);
         Lwheel_imu_pub.publish(Lwheel_imu);
+        Lhip_imu_pub.publish(Lhip_imu);
+        Rhip_imu_pub.publish(Rhip_imu);
         joint_pub.publish(igor_joint_states);
         //Clearing the arrays
         igor_joint_states.name.clear();

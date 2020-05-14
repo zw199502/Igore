@@ -6,7 +6,7 @@
 
 		<link name="${prefix}Actuator">
 			<visual>
-				<origin rpy="${(flip*M_PI)+(M_PI/2)} ${M_PI} ${0}" xyz="${actuator_x_size/2} ${reflect*(-actuator_y_size/2)} ${reflect*(-actuator_z_size/2)}"/>
+				<origin rpy="${(flip*M_PI)+(M_PI/2)} ${M_PI} ${0}" xyz="${actuator_x_size/3} ${reflect*(-actuator_y_size/2)} ${reflect*(-actuator_z_size/2)}"/>
 				<geometry>
 					<mesh filename="package://igor/meshes/X8-Export.STL" scale="0.001 0.001 0.001"/>
 		      		</geometry>
@@ -25,7 +25,7 @@
 
 	    		<inertial>
 	      			<mass value="0.46"/>
-	      			<inertia ixx="0.00066" ixy="0.0" ixz="0.0" iyy="0.00054" iyz="0.0" izz="0.00028"/>
+	      			<inertia iyy="0.00066" ixy="0.0" ixz="0.0" izz="0.00054" iyz="0.0" ixx="0.00028"/>
 	    		</inertial>           
 		</link>
 

@@ -4,7 +4,7 @@
 igor_markers::igor_markers() //Constructor
 {
 
-    center_frame = nh_.subscribe<nav_msgs::Odometry>("/igor/center",1, & igor_markers::ref_frame_callback, this);
+    center_frame = nh_.subscribe<nav_msgs::Odometry>("/igor/centerOdom",1, & igor_markers::ref_frame_callback, this);
     base_frame = nh_.subscribe<nav_msgs::Odometry>("/igor/odom",1, & igor_markers::support_line, this);
     zram_sub = nh_.subscribe<geometry_msgs::Vector3>("/igor/zramVec",1, & igor_markers::zram_callback, this);
     f_sub = nh_.subscribe<geometry_msgs::Vector3>("/igor/fVec",1, & igor_markers::f_callback, this);

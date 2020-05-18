@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh_;
     
     double wheel_rad = 0.1016;
-    double lengthBetweenTwoWheels = 0.50;
+    double lengthBetweenTwoWheels = 0.43;
     double x = 0;
     double y = 0;
     double th = 0;

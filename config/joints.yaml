@@ -62,7 +62,7 @@ igor:
 
     publish_rate: 1000.0
     cmd_vel_timeout: 1.0
-    wheel_separation : 0.50
+    wheel_separation : 0.43
     wheel_radius : 0.1016
     pose_covariance_diagonal : [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
     twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]

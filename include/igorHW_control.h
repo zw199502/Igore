@@ -42,6 +42,7 @@ ros::Subscriber CoG_sub, odom_sub;
 ros::Publisher  publisher;
 
 void CT_controller(Eigen::VectorXf vec); // Function prototype, its declaration
+void LQR_controller(Eigen::VectorXf vec);
 void PID_controller();
 void ref_update();
 
@@ -77,6 +78,9 @@ Eigen::MatrixXf vel_vec = Eigen::MatrixXf(1,2);
 Eigen::VectorXf igorState = Eigen::VectorXf(6);
 Eigen::VectorXf refState = Eigen::VectorXf(6);
 
+Eigen::MatrixXf k_r = Eigen::MatrixXf(1,6); // declaring 1X6 Eigen matrix of datatype float
+Eigen::MatrixXf k_l = Eigen::MatrixXf(1,6); // declaring 1X6 Eigen matrix of datatype float
+
 Eigen::Vector3d rightLegTranslation;
 Eigen::Vector3d leftLegTranslation;
 Eigen::Vector3d groundPoint;
@@ -94,12 +98,12 @@ Eigen::Vector3d Ev;
 Eigen::Vector3d velocities;
 Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
 Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
-float Kp1 = 1.5; // Linear postion gain
-float Kp2 = 30; // Yaw gain
-float Kp3 = 15; // Pitch gain
-float Kv1 = 0.75; // Linear velocity gain
+float Kp1 = 8; // Linear postion gain
+float Kp2 = 55; // Yaw gain
+float Kp3 = 105; // Pitch gain
+float Kv1 = 7; // Linear velocity gain
 float Kv2 = 10; // Yaw speed gain
-float Kv3 = 1; // Pitch speed gain
+float Kv3 = 20; // Pitch speed gain
 Eigen::Vector3d feedbck;
 Eigen::Vector2d output_trq;
 float L = 0.513; // CoM height
@@ -118,7 +122,7 @@ float leftHipPos = 0;
 float ROSrightHipPos = 0;
 float rightHipPos = 0;
 
-float pos_error = 0;
+float pos_error, CoM_height = 0;
 float last_err = 0;
 float error_d = 0;
 float error_i = 0;

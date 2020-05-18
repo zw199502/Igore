@@ -7,7 +7,7 @@ disturbance::disturbance() //Constructor
 {
     sub_clk = nh_.subscribe<rosgraph_msgs::Clock>("/clock",10,&disturbance::clk_callback,this);
     client = nh_.serviceClient<gazebo_msgs::ApplyBodyWrench>("/gazebo/apply_body_wrench"); // service client of gazebo service
-    igor_wrench.force.x = 0; // Force in newtons
+    igor_wrench.force.x = -15; // Force in newtons
     igor_wrench.force.y = 0;
     igor_wrench.force.z = 0;
     igor_wrench.torque.x = 0; // Moment in Nm

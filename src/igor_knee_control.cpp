@@ -10,7 +10,7 @@
 igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandle) //Constructor
 {
     sub_body_imu = nh_.subscribe<sensor_msgs::Imu>("/igor/body_imu/data",1, &igor_knee_control::body_imu_callback,this);
-    sub_odom = nh_.subscribe<nav_msgs::Odometry>("/igor/centerOdom",1, &igor_knee_control::odom_callback,this,ros::TransportHints().tcpNoDelay());
+    sub_odom = nh_.subscribe<nav_msgs::Odometry>("/igor/odom",1, &igor_knee_control::odom_callback,this,ros::TransportHints().tcpNoDelay());
     sub_CoG = nh_.subscribe<geometry_msgs::PointStamped>("/cog/robot",1, &igor_knee_control::CoG_callback,this);
     
     state_pub = nh_.advertise<geometry_msgs::Vector3>( "/igor/stateVec", 1 );
@@ -42,19 +42,19 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     V_h(0,1) = 0;
     V_h(0,2) = -1.9685;
     V_h(1,0) =  0; 
-    V_h(1,1) =  1.2109;
+    V_h(1,1) =  0.8956;
     V_h(1,2) =  0;
     V_h(2,0) = -1.9685;
     V_h(2,1) =  0; 
     V_h(2,2) =  0.200;
 
     // Torque selection matrix
-    E_h_inv(0,0) = 0.0502811;   
-    E_h_inv(0,1) = 0.1444836;  
-    E_h_inv(0,2) = -0.0051086;
-    E_h_inv(1,0) = 0.0502811;  
-    E_h_inv(1,1) = -0.1444836;  
-    E_h_inv(1,2) = -0.0051086;
+    E_h_inv(0,0) = 0.0503;   
+    E_h_inv(0,1) = 0.1605;  
+    E_h_inv(0,2) = -0.0051;
+    E_h_inv(1,0) = 0.0503;  
+    E_h_inv(1,1) = -0.1605;  
+    E_h_inv(1,2) = -0.0051;
    
     // Computed-torque controller's gain
     Kp(0,0) = Kp1;
@@ -276,7 +276,7 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
  
 
 
-    ROS_INFO("CoG angle: %f", CoG_angle_filtered);
+    //ROS_INFO("CoG angle: %f", CoG_angle_filtered);
     
     igor_state(2) = CoG_angle_filtered;   
     //igor_state(5) = CoG_angle_vel;
@@ -305,14 +305,20 @@ void igor_knee_control::statePub2 (geometry_msgs::Vector3 x) // State Vector Pub
 
 void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedback controller
 {
+    ROS_INFO("In LQR");
     if (igor_state(2)>= -0.35 && igor_state(2) <= 0.35){
         
         igor_knee_control::ref_update();
 
-        trq_r.data =  ((k_r*(vec-ref_state)).value()); // taking the scalar value of the eigen-matrx
+        // rightTrqVector.push_back((k_r*(vec-ref_state)).value());
+        // trq_r.data = trq_r_filt.filter(rightTrqVector,0);
+
+        trq_r.data =  (k_r*(vec-ref_state)).value(); // taking the scalar value of the eigen-matrx
       
+        // leftTrqVector.push_back((k_l*(vec-ref_state)).value());
+        // trq_l.data = trq_l_filt.filter(leftTrqVector,0); 
         
-        trq_l.data =  ((k_l*(vec-ref_state)).value());
+        trq_l.data =  (k_l*(vec-ref_state)).value();
         
 
         Lwheel_pub.publish(trq_l);
@@ -346,35 +352,36 @@ void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedbac
 
 void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque controller
 {
+    ROS_INFO("In CT control");
     igor_knee_control::ref_update();
 
     //L = CoG_Position.z - igor_position.z;
-    L = 0.513; // CoM height
+    L = 0.5914;//0.513; // CoM height
 
     velocities(0) = vec(3); // Center velocity
     velocities(1) = vec(4); // Yaw velocity
     velocities(2) = vec(5); // Pitch velocity
 
     // Inertia matrix
-    M_h(0,0)= 6.9700;
+    M_h(0,0)= 8.55;
     M_h(0,1)= 0;
-    M_h(0,2) = 5.9200*L*cos(vec(2));
+    M_h(0,2) = 7.5*L*cos(vec(2));
     M_h(1,0)= 0;
-    M_h(1,1)= 5.9200*pow(L,2) - pow(cos(vec(2)),2)*(5.9200*pow(L,2) + 0.0320) + 0.1449;
+    M_h(1,1)= 7.5*pow(L,2) - pow(cos(vec(2)),2)*(7.5*pow(L,2) + 0.0246) + 0.1382;
     M_h(1,2)= 0;
-    M_h(2,0) = 5.9200*L*cos(vec(2));
+    M_h(2,0) = 7.5*L*cos(vec(2));
     M_h(2,1)= 0;
-    M_h(2,2)= 5.9200*pow(L,2) + 0.0454;
+    M_h(2,2)= 7.5*pow(L,2) + 0.0347;
 
    // Coriolis and centrifugal vector 
-    H_h(0) = -5.9200*L*sin(vec(2))*(pow(vec(4),2) + pow(vec(5),2));
-    H_h(1) = vec(4)*(5.92000* vec(5)*sin(2*vec(2))*pow(L,2) + 5.92000*vec(3)*sin(vec(2))*L + 0.03197*vec(5)*sin(2*vec(2)));
-    H_h(2) = -0.5000*pow(vec(4),2)*sin(2*vec(2))*(5.9200*pow(L,2) + 0.0320);
+    H_h(0) = -7.5*L*sin(vec(2))*(pow(vec(4),2) + pow(vec(5),2));
+    H_h(1) = 6.0000e-04*vec(4)*(12500*vec(5)*sin(2*vec(2))*pow(L,2) + 12500*vec(3)*sin(vec(2))*L + 41*vec(5)*sin(2*vec(2)));
+    H_h(2) = -0.5000*pow(vec(4),2)*sin(2*vec(2))*(7.5000*pow(L,2) + 0.0246);
 
     // Gravity vector
     G_h(0) = 0;
     G_h(1) = 0;
-    G_h(2) = -58.0752*L*sin(vec(2));
+    G_h(2) = -73.5750*L*sin(vec(2));
 
     // Position errors
     Ep(0) = vec(0)-ref_state(0);
@@ -389,6 +396,11 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
 
     feedbck = Kv*Ev + Kp*Ep; 
     output_trq = E_h_inv*(M_h*(feedbck)+ H_h + V_h*velocities + G_h);
+    
+    // rightTrqVector.push_back(output_trq(1));
+    // trq_r.data = trq_r_filt.filter(rightTrqVector,0);
+    // leftTrqVector.push_back(output_trq(0));
+    // trq_l.data = trq_l_filt.filter(leftTrqVector,0); 
     
     trq_r.data = output_trq(1); // Right wheel torque
     trq_l.data = output_trq(0); // Left wheel torque
@@ -406,7 +418,7 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
 
     state_vec2.x = zram.x();
     state_vec2.y = CoG_Position.x;
-    state_vec2.z = 0*yaw;
+    state_vec2.z = yaw;
 
     this->statePub2(state_vec2); // Publishing the states
 
@@ -415,9 +427,9 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
 
 void igor_knee_control::ref_update()
 {
-    ref_state(0) = igor_state(0)+1; // forward position
-    //ref_state(0) = 2*(sin(0.5*ros::Time::now().toSec())); // forward position
-    ref_state(1) = M_pi/2*(cos(0.3*ros::Time::now().toSec())); // yaw
+    //ref_state(0) = igor_state(0)+1; // forward position
+    //ref_state(0) = 1*(sin(0.5*ros::Time::now().toSec())); // forward position
+    //ref_state(1) = M_pi/4*(cos(0.3*ros::Time::now().toSec())); // yaw
     knee_ref.data = 0*2.0*abs(sin(0.3*ros::Time::now().toSec()));
     hip_ref.data = 0*-1.0*abs(sin(0.3*ros::Time::now().toSec()));
     //knee_ref.data = 0.3;

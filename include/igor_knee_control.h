@@ -195,12 +195,12 @@ private:
     Eigen::Vector3d velocities;
     Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
     Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
-    float Kp1 = 2; // Linear postion gain
-    float Kp2 = 30; // Yaw gain
-    float Kp3 = 95; // Pitch gain
-    float Kv1 = 0.75; // Linear velocity gain
+    float Kp1 = 8;//2; // Linear postion gain
+    float Kp2 = 55;//30; // Yaw gain
+    float Kp3 = 105;//95; // Pitch gain
+    float Kv1 = 7;//0.75; // Linear velocity gain
     float Kv2 = 10; // Yaw speed gain
-    float Kv3 = 15; // Pitch speed gain
+    float Kv3 = 20;//15; // Pitch speed gain
     Eigen::Vector3d feedbck;
     Eigen::Vector2d output_trq;
 
@@ -241,33 +241,33 @@ public:
     // float y4 = 0;
 
     // Window size is 2*m+1
-    const int m = 15;
+    const int m1 = 12;
     const int m2 = 5;
     const int m3 = 15;
     //const int m4 = 20;
     // Polynomial Order
-    const int n = 0;
+    const int n1 = 0;
     const int n2 = 1;
     const int n3 = 3;
     //const int n4 = 0;
     // Initial Point Smoothing (ie evaluate polynomial at first point in the window)
     // Points are defined in range [-m;m]
-    const int t = m;
+    const int t1 = m1;
     const int t2 = m2;
     const int t3 = m3;
     //const int t4 = m4;
     // Derivate? 0: no derivation, 1: first derivative...
     const int d = 0;
     double result;
-    gram_sg::SavitzkyGolayFilterConfig sg_conf{m,t,n,d,0.002}; // filter configuration
+    gram_sg::SavitzkyGolayFilterConfig sg_conf1{m1,t1,n1,d,0.002}; // filter configuration
     gram_sg::SavitzkyGolayFilterConfig sg_conf2{m2,t2,n2,1,1}; // filter configuration
     gram_sg::SavitzkyGolayFilterConfig sg_conf3{m3,t3,n3,2,1}; // filter configuration
     //gram_sg::SavitzkyGolayFilterConfig sg_conf4{m4,t4,n4,d,0.002}; // filter configuration
-    gram_sg::SavitzkyGolayFilter f1{sg_conf}, f2{sg_conf2}, f3{sg_conf3}, f4{sg_conf3}, f5{sg_conf3};
+    gram_sg::SavitzkyGolayFilter f1{sg_conf1},trq_r_filt{sg_conf1},trq_l_filt{sg_conf1}, f2{sg_conf2}, f3{sg_conf3}, f4{sg_conf3}, f5{sg_conf3};
      
-    boost::circular_buffer<double> my_data1 {boost::circular_buffer<double>((2*m+1),0)};
-    //boost::circular_buffer<double> my_data5 {boost::circular_buffer<double>((2*m4+1),0)};
-    //boost::circular_buffer<double> my_data6 {boost::circular_buffer<double>((2*m4+1),0)};
+    boost::circular_buffer<double> my_data1 {boost::circular_buffer<double>((2*m1+1),0)};
+    boost::circular_buffer<double> rightTrqVector {boost::circular_buffer<double>((2*m1+1),0)}; // Initialize with 0
+    boost::circular_buffer<double> leftTrqVector {boost::circular_buffer<double>((2*m1+1),0)}; // Initialize with 0
     
     boost::circular_buffer<double> my_data2 {boost::circular_buffer<double>((2*m2+1),-0.033)}; // Initialize with -0.033
     boost::circular_buffer<double> my_data3 {boost::circular_buffer<double>((2*m3+1),-0.033)};

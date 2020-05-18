@@ -34,19 +34,19 @@
     <d_on_error>1 1</d_on_error>
   </velocity>
   <effort>
-    <kp>0.0 0.0</kp>
+    <kp>0.25 0.25</kp>
     <ki>0 0</ki>
-    <kd>0.02 0.02</kd>
+    <kd>0.0 0.0</kd>
     <feed_forward>1 1</feed_forward>
     <dead_zone>0 0</dead_zone>
-    <i_clamp>-0 -0</i_clamp>
-    <punch>0 0</punch>
-    <min_target>-10 -10</min_target>
+    <i_clamp>0 0</i_clamp>
+    <punch>0 0</punch> <!--A step amount that can be added to the standard proportional gain that can sometimes be useful in overcoming motor stiction. -->
+    <min_target>-10 -10</min_target> <!--Threshold values for the input to the PID controller. -->
     <max_target>10 10</max_target>
-    <target_lowpass>1 1</target_lowpass>
-    <min_output>-1 -1</min_output>
-    <max_output>1 1</max_output>
-    <output_lowpass>0.02 0.02</output_lowpass>
-    <d_on_error>0 0</d_on_error>
+    <target_lowpass>1 1</target_lowpass> <!--An IIR low-pass filter applied to the input to the PID controller. (0 to 1), where 1 is no low-passing and smaller values more heavily low-pass the input to the controller. -->
+    <min_output>-3 -3</min_output> <!--Threshold values for the output to the PID controller. -->
+    <max_output>3 3</max_output>
+    <output_lowpass>0.01 0.01</output_lowpass> <!--An IIR low-pass filter applied to the output of the PID controller. (0 to 1), where 1 is no low-passing and smaller values more heavily low-pass the input to the controller. -->
+    <d_on_error>0 0</d_on_error> <!--Flag for whether Kd runs on the derivative of the output of the PID controller or the error of the PID controller (the difference of the target and output values). (true or false) -->
   </effort>
 </group_gains>

@@ -98,10 +98,10 @@ Eigen::Vector3d Ev;
 Eigen::Vector3d velocities;
 Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
 Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
-float Kp1 = 8; // Linear postion gain
+float Kp1 = 7; // Linear postion gain
 float Kp2 = 55; // Yaw gain
 float Kp3 = 105; // Pitch gain
-float Kv1 = 7; // Linear velocity gain
+float Kv1 = 8; // Linear velocity gain
 float Kv2 = 10; // Yaw speed gain
 float Kv3 = 20; // Pitch speed gain
 Eigen::Vector3d feedbck;

@@ -121,7 +121,7 @@ void ref_update(){
     // Reference states
     refState(0) = 0*(sin(0.3*ros::Time::now().toSec())); // Center Position 
     refState(1) = 0*0.785398*(cos(0.3*ros::Time::now().toSec())); // Yaw
-    refState(2) = -0.0035; // Pitch
+    refState(2) = -0.004; // Pitch
     refState(3) = 0.0; // Center velocity
     refState(4) = 0.0; // Yaw velocity
     refState(5) = 0.0; // Pitch velocity
@@ -193,7 +193,7 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
     (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
     (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
-    //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+    wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
     publisher.publish(plot_vector);
 
@@ -256,14 +256,14 @@ void PID_controller(){
 void igorConfig(const ros::TimerEvent& e) // Lower body configuration
 {
 
-    ROSleftKneePos = -0.6;
+    ROSleftKneePos = 0.0;
     leftKneePos = -ROSleftKneePos;
     ROSrightKneePos = 0.0;
     rightKneePos = ROSrightKneePos;
 
     (*kneeGroupCommand).clear(); // Clearing the previous group commands
     (*kneeGroupCommand)[0].actuator().position().set(leftKneePos); // Position command to Left knee
-    //(*kneeGroupCommand)[1].actuator().position().set(rightKneePos); // Position command to Right knee
+    (*kneeGroupCommand)[1].actuator().position().set(rightKneePos); // Position command to Right knee
     
     ROSleftHipPos = 0.0;
     leftHipPos = ROSleftHipPos+M_PI/2;
@@ -372,11 +372,11 @@ int main(int argc, char **argv)
     V_h(0,1) = 0;
     V_h(0,2) = -1.9685;
     V_h(1,0) =  0; 
-    V_h(1,1) =  0.8956;
+    V_h(1,1) = 0.8956;
     V_h(1,2) =  0;
     V_h(2,0) = -1.9685;
     V_h(2,1) =  0; 
-    V_h(2,2) =  0.200;
+    V_h(2,2) = 0.200;
 
     // Torque selection matrix
     E_h_inv(0,0) = 0.0503;   
@@ -388,12 +388,12 @@ int main(int argc, char **argv)
 
 
     // LQR gains
-    k_r(0,0)= k_l(0,0) = -1*(-4.5355); // Linear Postion
-    k_r(0,1)= -1*(2.1015); // Yaw
-    k_r(0,2)= k_l(0,2) = -1*(-45.1363); // Pitch
-    k_r(0,3)= k_l(0,3) = -1*(-2.1); // Linear Velocity
-    k_r(0,4)= -1*(0.4); // Yaw Velocity
-    k_r(0,5)= k_l(0,5)= -1*(-3.5); // Pitch velocity
+    k_r(0,0)= k_l(0,0) = -1*(-4.62260*0);
+    k_r(0,1)= -1*(4.8301);
+    k_r(0,2)= k_l(0,2) = -1*(-37.5104);
+    k_r(0,3)= k_l(0,3) = -1*(-1*0);
+    k_r(0,4)= -1*(0.320);
+    k_r(0,5)= k_l(0,5)= -1*(-1.5);
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 

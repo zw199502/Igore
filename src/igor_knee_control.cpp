@@ -26,12 +26,12 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     client = nh_.serviceClient<std_srvs::Empty>("/gazebo/reset_world"); // service client of gazebo service
 
     // LQR gains
-    k_r(0,0)= k_l(0,0) = -1*(-3.5355);
-    k_r(0,1)= -1*(10.1015);
-    k_r(0,2)= k_l(0,2) = -1*(-51.1363);
-    k_r(0,3)= k_l(0,3) = -1*(-7.9125);
-    k_r(0,4)= -1*(1.6642);
-    k_r(0,5)= k_l(0,5)= -1*(-16.9210);
+    k_r(0,0)= k_l(0,0) = (-3.6226);
+    k_r(0,1)= (4.8301);
+    k_r(0,2)= k_l(0,2) = (-47.5104);
+    k_r(0,3)= k_l(0,3) = (-13.0462);
+    k_r(0,4)= (0.5320);
+    k_r(0,5)= k_l(0,5)= (-14.6656);
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 
@@ -79,7 +79,7 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
 
     // Reference states
     ref_state(0) = 0; // Center Position 
-    ref_state(1) = 0*(2.35); // Yaw
+    ref_state(1) = 0*(0.785398); // Yaw
     ref_state(2) = 0.0; // Beta
     ref_state(3) = 0; // Center velocity
     ref_state(4) = 0; // yaw velocity
@@ -262,16 +262,16 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
 
     CoG_angle_filtered = f1.filter(my_data1, 0);
 
-    my_data2.push_back(CoG_angle_filtered);
-    CoG_angle_vel = (f2.filter(my_data2,0))/0.002;
+    // my_data2.push_back(CoG_angle_filtered);
+    // CoG_angle_vel = (f2.filter(my_data2,0))/0.002;
 
-    if(CoG_angle_vel > 5){
-        CoG_angle_vel = 5;
-    }
-    else if(CoG_angle_vel < -5)
-    {
-        CoG_angle_vel = -5;
-    }
+    // if(CoG_angle_vel > 5){
+    //     CoG_angle_vel = 5;
+    // }
+    // else if(CoG_angle_vel < -5)
+    // {
+    //     CoG_angle_vel = -5;
+    // }
  
  
 
@@ -313,12 +313,11 @@ void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedbac
         // rightTrqVector.push_back((k_r*(vec-ref_state)).value());
         // trq_r.data = trq_r_filt.filter(rightTrqVector,0);
 
-        trq_r.data =  (k_r*(vec-ref_state)).value(); // taking the scalar value of the eigen-matrx
+        trq_r.data =  (k_r*(ref_state-vec)).value(); // taking the scalar value of the eigen-matrx
       
         // leftTrqVector.push_back((k_l*(vec-ref_state)).value());
         // trq_l.data = trq_l_filt.filter(leftTrqVector,0); 
-        
-        trq_l.data =  (k_l*(vec-ref_state)).value();
+        trq_l.data =  (k_l*(ref_state-vec)).value();
         
 
         Lwheel_pub.publish(trq_l);
@@ -384,14 +383,14 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
     G_h(2) = -73.5750*L*sin(vec(2));
 
     // Position errors
-    Ep(0) = vec(0)-ref_state(0);
-    Ep(1) = vec(1)-ref_state(1);
-    Ep(2) = vec(2)-ref_state(2);
+    Ep(0) = ref_state(0)-vec(0);
+    Ep(1) = ref_state(1)-vec(1);
+    Ep(2) = ref_state(2)-vec(2);
     
     // Velocity errors
-    Ev(0) = vec(3)-ref_state(3);
-    Ev(1) = vec(4)-ref_state(4);
-    Ev(2) = vec(5)-ref_state(5);
+    Ev(0) = ref_state(3)-vec(3);
+    Ev(1) = ref_state(4)-vec(4);
+    Ev(2) = ref_state(5)-vec(5);
     
 
     feedbck = Kv*Ev + Kp*Ep; 
@@ -427,9 +426,9 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
 
 void igor_knee_control::ref_update()
 {
-    //ref_state(0) = igor_state(0)+1; // forward position
-    //ref_state(0) = 1*(sin(0.5*ros::Time::now().toSec())); // forward position
-    //ref_state(1) = M_pi/4*(cos(0.3*ros::Time::now().toSec())); // yaw
+    ref_state(0) = igor_state(0)+1; // forward position
+    //ref_state(0) = 2*(sin(0.5*ros::Time::now().toSec())); // forward position
+    ref_state(1) = M_pi/4*(cos(0.3*ros::Time::now().toSec())); // yaw
     knee_ref.data = 0*2.0*abs(sin(0.3*ros::Time::now().toSec()));
     hip_ref.data = 0*-1.0*abs(sin(0.3*ros::Time::now().toSec()));
     //knee_ref.data = 0.3;

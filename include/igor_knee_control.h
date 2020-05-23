@@ -195,12 +195,12 @@ private:
     Eigen::Vector3d velocities;
     Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
     Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
-    float Kp1 = 8;//2; // Linear postion gain
-    float Kp2 = 55;//30; // Yaw gain
-    float Kp3 = 105;//95; // Pitch gain
-    float Kv1 = 7;//0.75; // Linear velocity gain
-    float Kv2 = 10; // Yaw speed gain
-    float Kv3 = 20;//15; // Pitch speed gain
+    float Kp1 = -8;//-2; // Linear postion gain
+    float Kp2 = -55;//-30; // Yaw gain
+    float Kp3 = -105;//-95; // Pitch gain
+    float Kv1 = -7;//-0.75; // Linear velocity gain
+    float Kv2 = -10; // Yaw speed gain
+    float Kv3 = -20;//-15; // Pitch speed gain
     Eigen::Vector3d feedbck;
     Eigen::Vector2d output_trq;
 

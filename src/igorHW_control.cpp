@@ -163,15 +163,15 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     G_h(1) = 0;
     G_h(2) = -73.5750*L*sin(vec(2));
 
-    // Position errors
-    Ep(0) = vec(0)-refState(0);
-    Ep(1) = vec(1)-refState(1);
-    Ep(2) = vec(2)-refState(2);
+   // Position errors
+    Ep(0) = refState(0)-vec(0);
+    Ep(1) = refState(1)-vec(1);
+    Ep(2) = refState(2)-vec(2);
     
     // Velocity errors
-    Ev(0) = vec(3)-refState(3);
-    Ev(1) = vec(4)-refState(4);
-    Ev(2) = vec(5)-refState(5);
+    Ev(0) = refState(3)-vec(3);
+    Ev(1) = refState(4)-vec(4);
+    Ev(2) = refState(5)-vec(5);
     
 
     feedbck = Kv*Ev + Kp*Ep; 
@@ -209,9 +209,9 @@ void LQR_controller(Eigen::VectorXf vec)
 
     ref_update();
 
-    trq_r =  (k_r*(vec-refState)).value(); // taking the scalar value of the eigen-matrx
+    trq_r =  (k_r*(refState-vec)).value(); // taking the scalar value of the eigen-matrx
         
-    trq_l =  (k_l*(vec-refState)).value();
+    trq_l =  (k_l*(refState-vec)).value();
 
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
     (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
@@ -388,12 +388,12 @@ int main(int argc, char **argv)
 
 
     // LQR gains
-    k_r(0,0)= k_l(0,0) = -1*(-4.62260*0);
-    k_r(0,1)= -1*(4.8301);
-    k_r(0,2)= k_l(0,2) = -1*(-37.5104);
-    k_r(0,3)= k_l(0,3) = -1*(-1*0);
-    k_r(0,4)= -1*(0.320);
-    k_r(0,5)= k_l(0,5)= -1*(-1.5);
+    k_r(0,0)= k_l(0,0) = (-4.62260*0);
+    k_r(0,1)= (4.8301);
+    k_r(0,2)= k_l(0,2) = (-37.5104);
+    k_r(0,3)= k_l(0,3) = (-1*0);
+    k_r(0,4)= (0.320);
+    k_r(0,5)= k_l(0,5)= (-1.5);
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 

@@ -24,7 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
   hebi_cpp_api
 )
 
-find_package(iir)
+##find_package(iir)
 find_package(gram_savitzky_golay REQUIRED)
 
 
@@ -197,7 +197,7 @@ target_link_libraries(igor_3d_controller_node
  )
 
 target_link_libraries(igor_knee_controller_node
-   ${catkin_LIBRARIES} iir::iir gram_savitzky_golay
+   ${catkin_LIBRARIES} gram_savitzky_golay #iir::iir
  )
 
 target_link_libraries(igor_odom_broadcaster_node

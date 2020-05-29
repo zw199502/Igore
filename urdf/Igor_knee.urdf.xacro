@@ -162,7 +162,7 @@
 		<origin xyz="${0} -${actuator_y_size-0.0038} -${lower_leg_length+actuator_z_size/2.5}" rpy="0 0 0" />
 	</xacro:igor_actuator>
 
-	<xacro:igor_wheel prefix="R" flip="0" reflect="-1">
+	<xacro:igor_wheel prefix="R" flip="0" reflect="-1" damping="0.25">
 		<origin xyz="${0} -${(actuator_y_size/2)+wheel_length/2} 0.0" rpy="0 0 0" />
 	</xacro:igor_wheel>
 
@@ -172,7 +172,7 @@
 		<origin xyz="${0} ${actuator_y_size-0.0038} -${lower_leg_length+actuator_z_size/2.5}" rpy="0 0 0" />
 	</xacro:igor_actuator>
 
-	<xacro:igor_wheel prefix="L" flip="1" reflect="1">
+	<xacro:igor_wheel prefix="L" flip="1" reflect="1" damping="0.25">
 		<origin xyz="${0} ${(actuator_y_size/2)+wheel_length/2} 0.0" rpy="0 0 0" />
 	</xacro:igor_wheel>
 

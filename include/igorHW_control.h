@@ -11,6 +11,7 @@
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/PointStamped.h"
 #include "geometry_msgs/Point.h"
+#include <std_msgs/Float32MultiArray.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
 #include <tf2_ros/buffer.h>
@@ -67,7 +68,7 @@ geometry_msgs::Quaternion baseLinkRotation;
 geometry_msgs::Point baseLinkTranslation;
 geometry_msgs::Vector3 baseLinearVelocity;
 geometry_msgs::Vector3 baseAngularVelocity;
-geometry_msgs::Vector3 plot_vector;
+std_msgs::Float32MultiArray plot_vector;
 geometry_msgs::Pose basePose;
 geometry_msgs::Twist baseTwist;
 tf::Quaternion quat1, quat2;
@@ -99,9 +100,9 @@ Eigen::Vector3d velocities;
 Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
 Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
 float Kp1 = -7; // Linear postion gain
-float Kp2 = -55; // Yaw gain
-float Kp3 = -105; // Pitch gain
-float Kv1 = -8; // Linear velocity gain
+float Kp2 = -50; // Yaw gain
+float Kp3 = -95;//-105; // Pitch gain
+float Kv1 = -5; // Linear velocity gain
 float Kv2 = -10; // Yaw speed gain
 float Kv3 = -20; // Pitch speed gain
 Eigen::Vector3d feedbck;

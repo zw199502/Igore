@@ -58,8 +58,8 @@ void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
 
     // ROS_INFO("Center link roll: %f", roll);
     // ROS_INFO("Center link pitch: %f", pitch);
-    ROS_INFO("CoG height: %f", CoM_height);
-    ROS_INFO("CoG pitch: %f", CoG_pitch);
+    //ROS_INFO("CoG height: %f", CoM_height);
+    //ROS_INFO("CoG pitch: %f", CoG_pitch);
     // ROS_INFO("Center link X: %f", centerLinkTranslation.x);
     
 
@@ -106,11 +106,17 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     igorState(2) = CoG_pitch;
     igorState(5) = basePitchVelocity;
 
-    plot_vector.x = refState(1);
-    plot_vector.y = igorState(1);
+    // Publishing states for ploting
+    plot_vector.data[0] = igorState(0);
+    plot_vector.data[1] = igorState(1);
+    plot_vector.data[2] = igorState(2);
+    plot_vector.data[3] = igorState(3);
+    plot_vector.data[4] = igorState(4);
+    plot_vector.data[5] = igorState(5);
+    
 
-    CT_controller(igorState); // Calling CT controller
-    //LQR_controller(igorState); // Calling LQR controller
+    //CT_controller(igorState); // Calling CT controller
+    LQR_controller(igorState); // Calling LQR controller
     //PID_controller();
 
 } // End of odom_callback
@@ -185,7 +191,8 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     // leftTrqVector.push_back(trq_l);
     // trq_l = f3.filter(leftTrqVector,0); 
     
-    plot_vector.z = 0;
+    plot_vector.data[6] = trq_l;
+    plot_vector.data[7] = trq_r;
 
     //ROS_INFO("Right Torque %f", trq_r);
     //ROS_INFO("Left Torque %f", trq_l);
@@ -216,9 +223,10 @@ void LQR_controller(Eigen::VectorXf vec)
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
     (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
     (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
-    //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+    wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    plot_vector.z = trq_r;
+    plot_vector.data[6] = trq_l; // left wheel torque
+    plot_vector.data[7] = trq_r; // right wheel torque
     
     publisher.publish(plot_vector);
 
@@ -344,7 +352,8 @@ int main(int argc, char **argv)
     leftLegTfListener = new tf2_ros::TransformListener(leftLegTfBuffer);
     rightLegTfListener = new tf2_ros::TransformListener(rightLegTfBuffer);
     
-    publisher = nh.advertise<geometry_msgs::Vector3>( "/igor/plotVec", 5);
+    publisher = nh.advertise<std_msgs::Float32MultiArray>( "/igor/plotVec", 5);
+    plot_vector.data.resize(8);
 
     // Computed-torque controller's gain
     Kp(0,0) = Kp1;
@@ -368,15 +377,15 @@ int main(int argc, char **argv)
     Kv(2,2) = Kv3;
 
     // Viscous friction matrix
-    V_h(0,0) = 19.3750;  
+    V_h(0,0) = 48.4376;  
     V_h(0,1) = 0;
-    V_h(0,2) = -1.9685;
+    V_h(0,2) = -4.9213;
     V_h(1,0) =  0; 
-    V_h(1,1) = 0.8956;
+    V_h(1,1) =  2.2390;
     V_h(1,2) =  0;
-    V_h(2,0) = -1.9685;
+    V_h(2,0) = -4.9213;
     V_h(2,1) =  0; 
-    V_h(2,2) = 0.200;
+    V_h(2,2) =  0.5000;
 
     // Torque selection matrix
     E_h_inv(0,0) = 0.0503;   
@@ -388,12 +397,12 @@ int main(int argc, char **argv)
 
 
     // LQR gains
-    k_r(0,0)= k_l(0,0) = (-4.62260*0);
-    k_r(0,1)= (4.8301);
-    k_r(0,2)= k_l(0,2) = (-37.5104);
-    k_r(0,3)= k_l(0,3) = (-1*0);
-    k_r(0,4)= (0.320);
-    k_r(0,5)= k_l(0,5)= (-1.5);
+    k_r(0,0)= k_l(0,0) = (-0.7071); // Forward position gain -ve
+    k_r(0,1)= (0.7071); // Yaw gain +ve
+    k_r(0,2)= k_l(0,2) = (-15.7478); // Pitch gain -ve
+    k_r(0,3)= k_l(0,3) = (-3.5132); // Forward speed gain -ve
+    k_r(0,4)= (0.4236); // Yaw speed gain +ve
+    k_r(0,5)= k_l(0,5)= (-3.1353); // Pitch speed gain -ve
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 

@@ -74,9 +74,6 @@ private:
     
     
     
-
-
-    //std_msgs::Header  imu_header; // Header type variable 
     float igor_pos_x = 0;
     float igor_pos_y = 0;
     float igor_vel_x = 0;
@@ -92,18 +89,18 @@ private:
     std_msgs::Float64 trq_l;
     std_msgs::Float64 knee_ref;
     std_msgs::Float64 hip_ref;
-    std::vector<double> joint_pos; // Array
-    std::vector<double> joint_vel; // Array
-    double L_knee_pos;
-    double L_knee_vel;
-    double R_knee_pos;
-    double R_knee_vel;
+    //std::vector<double> joint_pos; // Array
+    //std::vector<double> joint_vel; // Array
+    //double L_knee_pos;
+    //double L_knee_vel;
+    //double R_knee_pos;
+    //double R_knee_vel;
     float L = 0;
 
     float CoG_angle, leanAngle, CoM_height = 0;
 
-    float CoG_angle_filtered =0;
-    float CoG_angle_vel = 0;
+    float CoG_angle_filtered = 0;
+    //float CoG_angle_vel = 0;
 
     float CoM_acc_x;
     float CoM_acc_y;
@@ -114,14 +111,14 @@ private:
 
 
     
-    float filt1 = 0.02817; // LPF const.
-    float filt2 = 0.9718; // LPF const.
+    //float filt1 = 0.02817; // LPF const.
+    //float filt2 = 0.9718; // LPF const.
     
   
-    float vel_filt_out = 0;
-    float vel_filt_in = 0;
-    float last_vel_filt_out = 0.0;
-    float last_vel_filt_in = 0.0;
+    //float vel_filt_out = 0;
+    //float vel_filt_in = 0;
+    //float last_vel_filt_out = 0.0;
+    //float last_vel_filt_in = 0.0;
 
    
 
@@ -129,7 +126,7 @@ private:
 
 
     
-    geometry_msgs::Point ref_origin;
+    //geometry_msgs::Point ref_origin;
     
     
     tf::Quaternion quat;
@@ -172,7 +169,7 @@ private:
     //Eigen::MatrixXf k_k = Eigen::MatrixXf(1,8); // declaring 1X6 Eigen matrix of datatype float
     Eigen::VectorXf igor_state = Eigen::VectorXf(6); // declaring 6x1 Eigen vector of datatype float;
     Eigen::VectorXf ref_state = Eigen::VectorXf(6);
-    Eigen::Vector3d robot_center_pos;
+    //Eigen::Vector3d robot_center_pos;
     Eigen::Vector3d CoM_pos;
     Eigen::Vector3d CoM_accl;
     Eigen::Vector3d zram;
@@ -205,9 +202,9 @@ private:
     Eigen::Vector2d output_trq;
 
     //Eigen::MatrixXf transf_matrix = Eigen::MatrixXf(4,4);
-    tf::Vector3 CoM_tf;
-    tf::Vector3 unit_tf;
-    tf::Vector3 rot_axis{0,1,0};
+    //tf::Vector3 CoM_tf;
+    //tf::Vector3 unit_tf;
+    //tf::Vector3 rot_axis{0,1,0};
     tf::Matrix3x3 pitchRotation;
     
 
@@ -221,56 +218,51 @@ public:
 
     float pitch_vel_y = 0;
     float yaw_vel_z = 0;
-    float M_pi = 3.1415;
+    //float M_pi = 3.1415;
     //float freq = 0;
     geometry_msgs::Vector3 state_vec;
     geometry_msgs::Vector3 state_vec2;
     geometry_msgs::Vector3 zram_vec;
     geometry_msgs::Vector3 f_vec;
     geometry_msgs::Vector3 igor_angul_vel; // Vector3 type variable
-    //geometry_msgs::Vector3 rpy; // orientation in roll, pitch, and yaw
-
-    // const int order = 4; // 4th order (=2 biquads)
-    //Iir::Butterworth::LowPass<1> bwf;
-    //const float samplingrate = 500; // Hz
-    //const float cutoff_frequency = 4; // Hz
+  
     
-    // float y1 = 0;
-    // float y2 = 0;
-    // float y3 = 0;
-    // float y4 = 0;
 
     // Window size is 2*m+1
     const int m1 = 12;
     const int m2 = 5;
     const int m3 = 15;
-    //const int m4 = 20;
     // Polynomial Order
     const int n1 = 0;
     const int n2 = 1;
     const int n3 = 3;
-    //const int n4 = 0;
     // Initial Point Smoothing (ie evaluate polynomial at first point in the window)
     // Points are defined in range [-m;m]
     const int t1 = m1;
     const int t2 = m2;
     const int t3 = m3;
-    //const int t4 = m4;
     // Derivate? 0: no derivation, 1: first derivative...
     const int d = 0;
     double result;
     gram_sg::SavitzkyGolayFilterConfig sg_conf1{m1,t1,n1,d,0.002}; // filter configuration
     gram_sg::SavitzkyGolayFilterConfig sg_conf2{m2,t2,n2,1,1}; // filter configuration
     gram_sg::SavitzkyGolayFilterConfig sg_conf3{m3,t3,n3,2,1}; // filter configuration
-    //gram_sg::SavitzkyGolayFilterConfig sg_conf4{m4,t4,n4,d,0.002}; // filter configuration
-    gram_sg::SavitzkyGolayFilter f1{sg_conf1},pitch_vel_filt{sg_conf1},yaw_vel_filt{sg_conf1}, trq_r_filt{sg_conf1},trq_l_filt{sg_conf1}, f2{sg_conf2}, f3{sg_conf3}, f4{sg_conf3}, f5{sg_conf3};
-     
-    boost::circular_buffer<double> my_data1 {boost::circular_buffer<double>((2*m1+1),0)};
+    
+    gram_sg::SavitzkyGolayFilter f1{sg_conf1};
+    gram_sg::SavitzkyGolayFilter f3{sg_conf3};
+    gram_sg::SavitzkyGolayFilter f4{sg_conf3};
+    gram_sg::SavitzkyGolayFilter f5{sg_conf3};
+    gram_sg::SavitzkyGolayFilter pitch_vel_filt{sg_conf1};
+    gram_sg::SavitzkyGolayFilter yaw_vel_filt{sg_conf1};
+    //gram_sg::SavitzkyGolayFilter trq_r_filt{sg_conf1};
+    //gram_sg::SavitzkyGolayFilter trq_l_filt{sg_conf1};
+    
     boost::circular_buffer<double> rightTrqVector {boost::circular_buffer<double>((2*m1+1),0)}; // Initialize with 0
     boost::circular_buffer<double> leftTrqVector {boost::circular_buffer<double>((2*m1+1),0)}; // Initialize with 0
     boost::circular_buffer<double> pitchVelVector {boost::circular_buffer<double>((2*m1+1),0)};
     boost::circular_buffer<double> yawVelVector {boost::circular_buffer<double>((2*m1+1),0)};
-    boost::circular_buffer<double> my_data2 {boost::circular_buffer<double>((2*m2+1),-0.033)}; // Initialize with -0.033
+    
+    boost::circular_buffer<double> my_data1 {boost::circular_buffer<double>((2*m1+1),0)};
     boost::circular_buffer<double> my_data3 {boost::circular_buffer<double>((2*m3+1),-0.033)};
     boost::circular_buffer<double> my_data4 {boost::circular_buffer<double>((2*m3+1),-0.033)};
     boost::circular_buffer<double> my_data5 {boost::circular_buffer<double>((2*m3+1),-0.033)};

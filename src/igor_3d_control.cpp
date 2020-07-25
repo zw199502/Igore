@@ -6,7 +6,7 @@
 
 igor_3d_control::igor_3d_control() //Constructor
 {
-    sub_imu = nh.subscribe<sensor_msgs::Imu>("/igor/imu/data",10,&igor_3d_control::imu_callback,this);
+    sub_imu = nh.subscribe<sensor_msgs::Imu>("/igor/body_imu/data",10,&igor_3d_control::imu_callback,this);
     sub_odom = nh.subscribe<nav_msgs::Odometry>("/igor/odom",10,&igor_3d_control::odom_callback,this);
     pub = nh.advertise<geometry_msgs::Vector3>( "/igor/stateVec", 10 );
     cmd_pub1 = nh.advertise<std_msgs::Float64>( "/igor/L_wheel_joint_effort_controller/command", 10 );
@@ -38,10 +38,10 @@ igor_3d_control::igor_3d_control() //Constructor
     // k_l(0,4)= -1*0.0335;
     // k_l(0,5)= -1*-8.26;
 
-    ref_state(0) = -0.0; // Center Position 
+    ref_state(0) = 0.0; // Center Position 
     ref_state(1) = 0.0; // Yaw
-    ref_state(2) = 0.034; // Pitch
-    ref_state(3) = 0; // Center velocity 
+    ref_state(2) = 0*0.034; // Pitch
+    ref_state(3) = 0.0; // Center velocity 
     ref_state(4) = 0.0; // Yaw velocity
     ref_state(5) = 0.0; // Pitch velocity
         
@@ -199,7 +199,7 @@ void igor_3d_control::ref_update()
 {
     //freq = 0.2; // Hz
     //ref_state(0) = igor_state(0)-1; // forward position
-    //ref_state(1) = 0.78*cos(0.3*ros::Time::now().toSec()); // yaw
+    ref_state(1) = 0.78*cos(0.3*ros::Time::now().toSec()); // yaw
     return;
 }
 

@@ -80,21 +80,23 @@ private:
     float igor_vel_y = 0;
     float igor_center_position = 0;
     float igor_center_vel = 0;
+
+    float lqr_right_trq = 0;
+    float lqr_left_trq = 0;
     
     
     //ros::Duration dt{0}; //sampling time
 
     double roll, pitch, yaw = 0.0;
+    std_msgs::Float64 lqr_trq_r;
+    std_msgs::Float64 lqr_trq_l;
+    std_msgs::Float64 CT_trq_r;
+    std_msgs::Float64 CT_trq_l;
     std_msgs::Float64 trq_r;
     std_msgs::Float64 trq_l;
     std_msgs::Float64 knee_ref;
     std_msgs::Float64 hip_ref;
-    //std::vector<double> joint_pos; // Array
-    //std::vector<double> joint_vel; // Array
-    //double L_knee_pos;
-    //double L_knee_vel;
-    //double R_knee_pos;
-    //double R_knee_vel;
+
     float L = 0;
 
     float CoG_angle, leanAngle, CoM_height = 0;
@@ -148,6 +150,7 @@ private:
     ros::Publisher  Rhip_pub; // creating ROS publisher
     ros::Publisher  zram_pub; // creating ROS publisher
     ros::Publisher  f_pub; // creating ROS publisher
+    //ros::Publisher  plot_publisher;
     
 
 
@@ -159,6 +162,7 @@ private:
     void statePub2 (geometry_msgs::Vector3 x);
     void lqr_controller(Eigen::VectorXf eig_vec);
     void CT_controller(Eigen::VectorXf eig_vec);
+    void ff_fb_controller();
     void ref_update();
 
     Eigen::Vector2f trig_vec; // declaring 2X1 Eigen vector of datatype float
@@ -193,8 +197,8 @@ private:
     Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
     Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
     float Kp1 = -7;//-2; // Linear postion gain
-    float Kp2 = -55;//-30; // Yaw gain
-    float Kp3 = -105;//-95; // Pitch gain
+    float Kp2 = -50;//-30; // Yaw gain
+    float Kp3 = -95;//-95; // Pitch gain
     float Kv1 = -5;//-8;//-0.75; // Linear velocity gain
     float Kv2 = -10; // Yaw speed gain
     float Kv3 = -20;//-15; // Pitch speed gain

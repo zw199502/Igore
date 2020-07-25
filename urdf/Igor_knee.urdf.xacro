@@ -162,7 +162,7 @@
 		<origin xyz="${0} -${actuator_y_size-0.0038} -${lower_leg_length+actuator_z_size/2.5}" rpy="0 0 0" />
 	</xacro:igor_actuator>
 
-	<xacro:igor_wheel prefix="R" flip="0" reflect="-1" damping="0.25">
+	<xacro:igor_wheel prefix="R" flip="0" reflect="-1" damping="${0.25}">
 		<origin xyz="${0} -${(actuator_y_size/2)+wheel_length/2} 0.0" rpy="0 0 0" />
 	</xacro:igor_wheel>
 
@@ -172,7 +172,7 @@
 		<origin xyz="${0} ${actuator_y_size-0.0038} -${lower_leg_length+actuator_z_size/2.5}" rpy="0 0 0" />
 	</xacro:igor_actuator>
 
-	<xacro:igor_wheel prefix="L" flip="1" reflect="1" damping="0.25">
+	<xacro:igor_wheel prefix="L" flip="1" reflect="1" damping="${0.25}">
 		<origin xyz="${0} ${(actuator_y_size/2)+wheel_length/2} 0.0" rpy="0 0 0" />
 	</xacro:igor_wheel>
 
@@ -215,14 +215,14 @@
 
 	<!-- Center IMU Sensor -->
 
-	<gazebo reference="robot_center_link">
+	<!--gazebo reference="robot_center_link">
 	    <gravity>true</gravity>
 	    <sensor name="center_imu" type="imu">
 	      <always_on>true</always_on>
 	      <visualize>true</visualize>
 	      <update_rate>500</update_rate>
-	      <!--topic>__default_topic__</topic-->
-	      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+	      <!-topic>__default_topic__</topic-->
+	      <!--plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
 		<robotNamespace>/igor</robotNamespace>
 		<topicName>center_imu/data</topicName>
 		<bodyName>robot_center_link</bodyName>
@@ -234,7 +234,7 @@
 	      </plugin>
 	      <pose>0 0 0 0 0 0</pose>
 	    </sensor>
-	</gazebo>
+	</gazebo-->
 
 
 

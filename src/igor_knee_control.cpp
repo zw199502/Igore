@@ -23,6 +23,7 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     Rknee_pub = nh_.advertise<std_msgs::Float64>( "/igor/R_kfe_joint_position_controller/command", 1 );
     Lhip_pub = nh_.advertise<std_msgs::Float64>( "/igor/L_hfe_joint_position_controller/command", 1 );
     Rhip_pub = nh_.advertise<std_msgs::Float64>( "/igor/R_hfe_joint_position_controller/command", 1 );
+    //plot_publisher = nh_.advertise<std_msgs::Float32MultiArray>( "/igor/plotVec", 5);
     client = nh_.serviceClient<std_srvs::Empty>("/gazebo/reset_world"); // service client of gazebo service
 
     // LQR gains
@@ -34,12 +35,22 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     // k_r(0,5)= k_l(0,5)= (-14.6656);
     // k_l(0,1)= -1*k_r(0,1);
     // k_l(0,4)= -1*k_r(0,4);
+    
+    // k_r(0,0)= k_l(0,0) = (-0.7071); // Forward position gain -ve
+    // k_r(0,1)= (0.7071); // Yaw gain +ve
+    // k_r(0,2)= k_l(0,2) = (-15.7478); // Pitch gain -ve
+    // k_r(0,3)= k_l(0,3) = (-4.5132); // Forward speed gain -ve
+    // k_r(0,4)= (0.4236); // Yaw speed gain +ve
+    // k_r(0,5)= k_l(0,5)= (-3.1353); // Pitch speed gain -ve
+    // k_l(0,1)= -1*k_r(0,1);
+    // k_l(0,4)= -1*k_r(0,4);
+
     k_r(0,0)= k_l(0,0) = (-0.7071); // Forward position gain -ve
     k_r(0,1)= (0.7071); // Yaw gain +ve
-    k_r(0,2)= k_l(0,2) = (-15.7478); // Pitch gain -ve
-    k_r(0,3)= k_l(0,3) = (-4.5132); // Forward speed gain -ve
-    k_r(0,4)= (0.4236); // Yaw speed gain +ve
-    k_r(0,5)= k_l(0,5)= (-3.1353); // Pitch speed gain -ve
+    k_r(0,2)= k_l(0,2) = (-17.8052); // Pitch gain -ve
+    k_r(0,3)= k_l(0,3) = (-5.4623); // Forward speed gain -ve
+    k_r(0,4)= (0.3753); // Yaw speed gain +ve
+    k_r(0,5)= k_l(0,5)= (-3.6424); // Pitch speed gain -ve
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 
@@ -126,7 +137,7 @@ void igor_knee_control::body_imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
     yawVelVector.push_back(yaw_vel_z);
     igor_state(4) = yaw_vel_filt.filter(yawVelVector, 0);
 
-    ROS_INFO("Imu Pitch: %f",pitch);
+    //ROS_INFO("Imu Pitch: %f",pitch);
 
     
 }// End of imu_callback
@@ -277,14 +288,6 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
 
     // my_data2.push_back(CoG_angle_filtered);
     // CoG_angle_vel = (f2.filter(my_data2,0))/0.002;
-
-    // if(CoG_angle_vel > 5){
-    //     CoG_angle_vel = 5;
-    // }
-    // else if(CoG_angle_vel < -5)
-    // {
-    //     CoG_angle_vel = -5;
-    // }
  
  
 
@@ -297,7 +300,7 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
 
     this->lqr_controller(igor_state);
     //this->CT_controller(igor_state);
-
+    //this->ff_fb_controller();
 
 
 } // End of CoG_callback
@@ -326,37 +329,38 @@ void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedbac
         // rightTrqVector.push_back((k_r*(vec-ref_state)).value());
         // trq_r.data = trq_r_filt.filter(rightTrqVector,0);
 
-        state_vec2.z = trq_r.data =  (k_r*(ref_state-vec)).value(); // taking the scalar value of the eigen-matrx
+        state_vec2.z = lqr_right_trq = lqr_trq_r.data =  (k_r*(ref_state-vec)).value(); // taking the scalar value of the eigen-matrx
       
         // leftTrqVector.push_back((k_l*(vec-ref_state)).value());
         // trq_l.data = trq_l_filt.filter(leftTrqVector,0); 
-        state_vec2.y = trq_l.data =  (k_l*(ref_state-vec)).value();
+        state_vec2.y = lqr_left_trq = lqr_trq_l.data =  (k_l*(ref_state-vec)).value();
         
 
-        Lwheel_pub.publish(trq_l);
-        Rwheel_pub.publish(trq_r);
+        Lwheel_pub.publish(lqr_trq_l); // Publish left wheel torque
+        Rwheel_pub.publish(lqr_trq_r); // Publish right wheel torque
        
     }
     else if (igor_state(2)<= -1.4 || igor_state(2) >= 1.4){
-        trq_r.data = 0;
-        trq_l.data = 0;
-        Lwheel_pub.publish(trq_l);
-        Rwheel_pub.publish(trq_r);
+        lqr_trq_r.data = 0;
+        lqr_trq_l.data = 0;
+        Lwheel_pub.publish(lqr_trq_l);
+        Rwheel_pub.publish(lqr_trq_r);
         
         ROS_INFO("Reseting Model");
         ros::Duration(0.5).sleep(); // sleep for half a second
         client.call(srv); // Calling the service to reset robot model in gazebo
     }
     
-
-    state_vec.x = vec(3); // Forward velocity 
-    state_vec.y = vec(4);// Yaw velocity
-    state_vec.z = vec(5); //Pitch velocity
-
-    state_vec2.x = vec(0);
     
-    this->statePub(state_vec);
-    this->statePub2(state_vec2); // Publishing the states
+
+    //state_vec.x = vec(3); // Forward velocity 
+    //state_vec.y = vec(4);// Yaw velocity
+    //state_vec.z = vec(5); //Pitch velocity
+
+    //state_vec2.x = vec(0);
+    
+    //this->statePub(state_vec);
+    //this->statePub2(state_vec2); // Publishing the states
 
     
 } // End of lqr_controller
@@ -364,9 +368,8 @@ void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedbac
 void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque controller
 {
     ROS_INFO("In CT control");
-    igor_knee_control::ref_update();
+    igor_knee_control::ref_update(); // calling the ref update function
 
-    //L = CoG_Position.z - igor_position.z;
     L = CoM_height; //0.5914;//0.513; // CoM height
 
     velocities(0) = vec(3); // Center velocity
@@ -407,18 +410,14 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
 
     feedbck = Kv*Ev + Kp*Ep; 
     output_trq = E_h_inv*(M_h*(feedbck)+ H_h + V_h*velocities + G_h);
+
     
-    // rightTrqVector.push_back(output_trq(1));
-    // trq_r.data = trq_r_filt.filter(rightTrqVector,0);
-    // leftTrqVector.push_back(output_trq(0));
-    // trq_l.data = trq_l_filt.filter(leftTrqVector,0); 
-    
-    trq_r.data = output_trq(1); // Right wheel torque
-    trq_l.data = output_trq(0); // Left wheel torque
+    CT_trq_r.data = output_trq(1); // Right wheel torque
+    CT_trq_l.data = output_trq(0); // Left wheel torque
     
     
-    Lwheel_pub.publish(trq_l);
-    Rwheel_pub.publish(trq_r);
+    // Lwheel_pub.publish(CT_trq_l);
+    // Rwheel_pub.publish(CT_trq_r);
     
     Lhip_pub.publish(hip_ref);
     Rhip_pub.publish(hip_ref);
@@ -426,30 +425,40 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
     Lknee_pub.publish(knee_ref);
     Rknee_pub.publish(knee_ref);
 
-    state_vec.x = vec(3); // Forward velocity 
-    state_vec.y = vec(4);// Yaw velocity
-    state_vec.z = vec(5); //Pitch velocity
+    // state_vec.x = vec(3); // Forward velocity 
+    // state_vec.y = vec(4);// Yaw velocity
+    // state_vec.z = vec(5); //Pitch velocity
 
-    state_vec2.x = vec(0);
-    state_vec2.y = output_trq(0);
-    state_vec2.z = output_trq(1);
+    // state_vec2.x = vec(0);
+    // state_vec2.y = output_trq(0);
+    // state_vec2.z = output_trq(1);
     
-    this->statePub(state_vec);
-    this->statePub2(state_vec2); // Publishing the states
+    //this->statePub(state_vec);
+    //this->statePub2(state_vec2); // Publishing the states
 
 }// End of CT_controller
+
+void igor_knee_control::ff_fb_controller(){
+    ROS_INFO("In ff_fb control");
+    trq_l.data = output_trq(0) + lqr_left_trq;
+    trq_r.data = output_trq(1) + lqr_right_trq;
+
+    // Lwheel_pub.publish(trq_l);
+    // Rwheel_pub.publish(trq_r);
+
+}// End of ff_fb_controller
 
 
 void igor_knee_control::ref_update()
 {
     //ref_state(0) = igor_state(0)+1; // forward position
-    ref_state(0) = (sin(0.3*ros::Time::now().toSec())); // forward position
-    //ref_state(1) = M_pi/4*(cos(0.3*ros::Time::now().toSec())); // yaw
+    //ref_state(0) = (sin(0.3*ros::Time::now().toSec())); // forward position
+    ref_state(1) = M_PI/4*(cos(0.3*ros::Time::now().toSec())); // yaw
     knee_ref.data = 0*2.0*abs(sin(0.3*ros::Time::now().toSec()));
     hip_ref.data = 0*-1.0*abs(sin(0.3*ros::Time::now().toSec()));
     //knee_ref.data = 0.3;
     
-    return;
+    //return;
 }// End of ref_update function
 
 igor_knee_control::~igor_knee_control()

@@ -58,8 +58,8 @@ void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
 
     // ROS_INFO("Center link roll: %f", roll);
     // ROS_INFO("Center link pitch: %f", pitch);
-    //ROS_INFO("CoG height: %f", CoM_height);
-    //ROS_INFO("CoG pitch: %f", CoG_pitch);
+    // ROS_INFO("CoG height: %f", CoM_height);
+    // ROS_INFO("CoG pitch: %f", CoG_pitch);
     // ROS_INFO("Center link X: %f", centerLinkTranslation.x);
     
 
@@ -107,17 +107,18 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     igorState(5) = basePitchVelocity;
 
     // Publishing states for ploting
-    plot_vector.data[0] = igorState(0);
-    plot_vector.data[1] = igorState(1);
-    plot_vector.data[2] = igorState(2);
-    plot_vector.data[3] = igorState(3);
-    plot_vector.data[4] = igorState(4);
-    plot_vector.data[5] = igorState(5);
+    plot_vector.data[0] = igorState(0); // Forward position
+    plot_vector.data[1] = igorState(1); // Yaw
+    plot_vector.data[2] = igorState(2); // Pitch
+    plot_vector.data[3] = igorState(3); // Forward Velocity
+    plot_vector.data[4] = igorState(4); // Yaw Velocity
+    plot_vector.data[5] = igorState(5); // Pitch Velocity
     
+    ROS_INFO("Pitch angle %f",igorState(2));
 
-    //CT_controller(igorState); // Calling CT controller
-    LQR_controller(igorState); // Calling LQR controller
-    //PID_controller();
+    CT_controller(igorState); // Calling CT controller
+    //LQR_controller(igorState); // Calling LQR controller
+    //ff_fb_controller();
 
 } // End of odom_callback
 
@@ -127,13 +128,12 @@ void ref_update(){
     // Reference states
     refState(0) = 0*(sin(0.3*ros::Time::now().toSec())); // Center Position 
     refState(1) = 0*0.785398*(cos(0.3*ros::Time::now().toSec())); // Yaw
-    refState(2) = -0.004; // Pitch
+    refState(2) = -0.004*0; // Pitch
     refState(3) = 0.0; // Center velocity
     refState(4) = 0.0; // Yaw velocity
     refState(5) = 0.0; // Pitch velocity
 
-    //return;
-
+    return;
 
 } // End of ref_update
 
@@ -142,6 +142,10 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     
     ref_update();
 
+    ROS_INFO("In CT controller");
+    ROS_INFO("Yaw Reference: %f", refState(1));
+    ROS_INFO("Yaw error %f", (refState(1)-vec(1)));
+    
     L = CoM_height;
 
     velocities(0) = vec(3); // Center velocity
@@ -183,23 +187,19 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     feedbck = Kv*Ev + Kp*Ep; 
     output_trq = E_h_inv*(M_h*(feedbck)+ H_h + V_h*velocities + G_h);
     
-    trq_r = output_trq(1); // Right wheel torque
-    trq_l = output_trq(0); // Left wheel torque
+    CT_trq_r = output_trq(1); // Right wheel torque
+    CT_trq_l = output_trq(0); // Left wheel torque
 
-    // rightTrqVector.push_back(trq_r);
-    // trq_r = f2.filter(rightTrqVector,0);
-    // leftTrqVector.push_back(trq_l);
-    // trq_l = f3.filter(leftTrqVector,0); 
     
-    plot_vector.data[6] = trq_l;
-    plot_vector.data[7] = trq_r;
+    plot_vector.data[6] = CT_trq_l;
+    plot_vector.data[7] = CT_trq_r;
 
-    //ROS_INFO("Right Torque %f", trq_r);
-    //ROS_INFO("Left Torque %f", trq_l);
+    ROS_INFO("Right Torque %f", CT_trq_r);
+    ROS_INFO("Left Torque %f", CT_trq_l);
 
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
-    (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
-    (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
+    (*wheelGroupCommand)[1].actuator().effort().set(-CT_trq_r); // Effort command to Right wheel
+    (*wheelGroupCommand)[0].actuator().effort().set(CT_trq_l); // Effort command to Left wheel
     wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
     publisher.publish(plot_vector);
@@ -215,18 +215,25 @@ void LQR_controller(Eigen::VectorXf vec)
 {
 
     ref_update();
+    ROS_INFO("In LQR controller");
+    ROS_INFO("Yaw Reference: %f", refState(1));
 
-    trq_r =  (k_r*(refState-vec)).value(); // taking the scalar value of the eigen-matrx
+    
+    lqr_trq_r =  (k_r*(refState-vec)).value(); // taking the scalar value of the eigen-matrx
         
-    trq_l =  (k_l*(refState-vec)).value();
+    lqr_trq_l =  (k_l*(refState-vec)).value();
+
+    ROS_INFO("Right LQR Torque %f", lqr_trq_r);
+    ROS_INFO("Left LQR Torque %f", lqr_trq_l);
+    ROS_INFO("Yaw error %f", (refState(1)-vec(1)));
 
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
-    (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
-    (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
-    wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+    (*wheelGroupCommand)[1].actuator().effort().set(-lqr_trq_r); // Effort command to Right wheel
+    (*wheelGroupCommand)[0].actuator().effort().set(lqr_trq_l); // Effort command to Left wheel
+    //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    plot_vector.data[6] = trq_l; // left wheel torque
-    plot_vector.data[7] = trq_r; // right wheel torque
+    plot_vector.data[6] = lqr_trq_l; // left wheel torque
+    plot_vector.data[7] = lqr_trq_r; // right wheel torque
     
     publisher.publish(plot_vector);
 
@@ -235,47 +242,39 @@ void LQR_controller(Eigen::VectorXf vec)
 }// End of LQR controller
 
 
+void ff_fb_controller() // feedforward+feedback controller
+{
 
-void PID_controller(){
+    ROS_INFO("In ff_fb_controller");
+    ROS_INFO("Yaw Reference: %f", refState(1));
 
-    pos_error = 0-(igorState(2)*(180/M_PI)); //Converting from rad to deg
-    error_d = (pos_error-last_err)/0.002;
-    last_err = pos_error;
-    error_i += pos_error*0.002;
-    trq_r = trq_l = -((pos_error*1.2)+(error_d*0.05)+(error_i*0));
-    
-    rightTrqVector.push_back(trq_r);
-    trq_r = f2.filter(rightTrqVector,0);
-    leftTrqVector.push_back(trq_l);
-    trq_l = f3.filter(leftTrqVector,0); 
-    // ROS_INFO("Pitch %f", igorState(2));
-    ROS_INFO("Trq %f", trq_l);
+    CT_controller(igorState); // Calling CT controller
+    LQR_controller(igorState); // Calling LQR controller
+    trq_l = lqr_trq_l+CT_trq_l;
+    trq_r = lqr_trq_r+CT_trq_r;
 
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
     (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
     (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
     //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    publisher.publish(plot_vector);
-
-
-}// End of PID controller
+}// End of ff_fb_controller
 
 void igorConfig(const ros::TimerEvent& e) // Lower body configuration
 {
 
-    ROSleftKneePos = 0.0;
+    ROSleftKneePos = -0.65;
     leftKneePos = -ROSleftKneePos;
-    ROSrightKneePos = 0.0;
+    ROSrightKneePos = -0.65;
     rightKneePos = ROSrightKneePos;
 
     (*kneeGroupCommand).clear(); // Clearing the previous group commands
     (*kneeGroupCommand)[0].actuator().position().set(leftKneePos); // Position command to Left knee
     (*kneeGroupCommand)[1].actuator().position().set(rightKneePos); // Position command to Right knee
     
-    ROSleftHipPos = 0.0;
+    ROSleftHipPos = (1.9-M_PI/2);
     leftHipPos = ROSleftHipPos+M_PI/2;
-    ROSrightHipPos = 0.0;
+    ROSrightHipPos = (1.9-M_PI/2);
     rightHipPos = -(ROSrightHipPos+M_PI/2);
 
     (*hipGroupCommand).clear(); // Clearing the previous group commands
@@ -330,17 +329,19 @@ int main(int argc, char **argv)
     wheelGroupCommand = new hebi::GroupCommand(wheel_group->size());
 
     // Actuator's gain upload
+    
     // (*kneeGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWkneeGains.xml");
-    // (*kneeGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWkneeSafetyParam.xml");
-    // bool kneeGainSuccess = knee_group->sendCommandWithAcknowledgement(*kneeGroupCommand);
-    // std::cout<<"Knee Gains Uploaded:  "<< kneeGainSuccess << std::endl;
+    (*kneeGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWkneeSafetyParam.xml");
+    bool kneeGainSuccess = knee_group->sendCommandWithAcknowledgement(*kneeGroupCommand);
+    std::cout<<"Knee Gains Uploaded:  "<< kneeGainSuccess << std::endl;
 
     // (*hipGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWhipGains.xml");
-    // (*hipGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWhipSafetyParam.xml");
-    // bool hipGainSuccess = hip_group->sendCommandWithAcknowledgement(*hipGroupCommand);
-    // std::cout<<"Hip Gains Uploaded:  "<< hipGainSuccess << std::endl;
+    (*hipGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWhipSafetyParam.xml");
+    bool hipGainSuccess = hip_group->sendCommandWithAcknowledgement(*hipGroupCommand);
+    std::cout<<"Hip Gains Uploaded:  "<< hipGainSuccess << std::endl;
 
     (*wheelGroupCommand).readGains("/home/fahadraza/catkin_ws/src/igor/config/HWwheelGains.xml");
+    (*wheelGroupCommand).readSafetyParameters("/home/fahadraza/catkin_ws/src/igor/config/HWwheelSafetyParam.xml");
     bool wheelGainSuccess = wheel_group->sendCommandWithAcknowledgement(*wheelGroupCommand);
     std::cout<<"Wheel Gains Uploaded:  "<< wheelGainSuccess << std::endl;
         
@@ -396,16 +397,41 @@ int main(int argc, char **argv)
     E_h_inv(1,2) = -0.0051;
 
 
+    // LQR gains for ff_fb_controller
+    // k_r(0,0)= k_l(0,0) = 0.55*(-0.7071); // Forward position gain -ve
+    // k_r(0,1)= 0.5*(0.7071); // Yaw gain +ve
+    // k_r(0,2)= k_l(0,2) = 0.52*(-15.7478); // Pitch gain -ve
+    // k_r(0,3)= k_l(0,3) = 0.35*(-3.5132); // Forward speed gain -ve
+    // k_r(0,4)= 0.3*(0.4236); // Yaw speed gain +ve
+    // k_r(0,5)= k_l(0,5)= 0.55*(-3.1353); // Pitch speed gain -ve
+    // k_l(0,1)= -1*k_r(0,1);
+    // k_l(0,4)= -1*k_r(0,4);
+
     // LQR gains
-    k_r(0,0)= k_l(0,0) = (-0.7071); // Forward position gain -ve
+    k_r(0,0)= k_l(0,0) = 4*(-0.7071); // Forward position gain -ve
     k_r(0,1)= (0.7071); // Yaw gain +ve
-    k_r(0,2)= k_l(0,2) = (-15.7478); // Pitch gain -ve
-    k_r(0,3)= k_l(0,3) = (-3.5132); // Forward speed gain -ve
-    k_r(0,4)= (0.4236); // Yaw speed gain +ve
-    k_r(0,5)= k_l(0,5)= (-3.1353); // Pitch speed gain -ve
+    k_r(0,2)= k_l(0,2) = 1.5*(-17.8052); // Pitch gain -ve
+    k_r(0,3)= k_l(0,3) = (-4.4623); // Forward speed gain -ve
+    k_r(0,4)= (0.3753); // Yaw speed gain +ve
+    k_r(0,5)= k_l(0,5)= (-3.6424); // Pitch speed gain -ve
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 
+    // LQR testing
+    // k_r(0,0) = -0.7593; // Forward position gain -ve
+    // k_l(0,0) = -0.6507;
+    // k_r(0,1) = 0.6507; // Yaw gain +ve
+    // k_l(0,1) = -0.7593;
+    // k_r(0,2) = -17.0732; // Pitch gain -ve
+    // k_l(0,2) = -16.4604;
+    // k_r(0,3) = 0.85*-4.9993; // Forward speed gain -ve
+    // k_l(0,3) = 0.85*-4.9688;
+    // k_r(0,4) = 0.4330; // Yaw speed gain +ve
+    // k_l(0,4) = -0.3663;
+    // k_r(0,5) = -3.4326; // Pitch speed gain -ve
+    // k_l(0,5) = -3.3422;
+    
+    
 
     ros::Duration(2).sleep(); // Sleep for 2 seconds
     

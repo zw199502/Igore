@@ -2,12 +2,12 @@
 <group_gains>
   <control_strategy>4 4</control_strategy>
   <position>
-    <kp>10 10</kp>
-    <ki>10 10</ki>
+    <kp>100 100</kp>
+    <ki>20 20</ki>
     <kd>0 0</kd>
     <feed_forward>0 0</feed_forward>
     <dead_zone>0.0 0.0</dead_zone>
-    <i_clamp>5 5</i_clamp>
+    <i_clamp>0.25 0.25</i_clamp>
     <punch>0 0</punch>
     <min_target>-inf -inf</min_target>
     <max_target>inf inf</max_target>

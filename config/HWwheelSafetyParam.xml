@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<group_safety version="1.0.0">
+  <mstop>
+    <strategy>disabled disabled</strategy>
+  </mstop>
+  <position>
+    <limit_strategy>spring spring</limit_strategy>
+    <min_limit>-inf -inf</min_limit>
+    <max_limit>inf inf</max_limit>
+  </position>
+  <velocity>
+    <min_limit>-12 -12</min_limit>
+    <max_limit>12 12</max_limit>
+  </velocity>
+</group_safety>

@@ -44,7 +44,7 @@ ros::Publisher  publisher;
 
 void CT_controller(Eigen::VectorXf vec); // Function prototype, its declaration
 void LQR_controller(Eigen::VectorXf vec);
-void PID_controller();
+void ff_fb_controller();
 void ref_update();
 
 
@@ -99,16 +99,25 @@ Eigen::Vector3d Ev;
 Eigen::Vector3d velocities;
 Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
 Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
+// CT gains for ff_fb_controller
+// float Kp1 = -7*0.5; // Linear postion gain
+// float Kp2 = -50*0.5; // Yaw gain
+// float Kp3 = -95*0.5;//-105; // Pitch gain
+// float Kv1 = -5*0.35; // Linear velocity gain
+// float Kv2 = -10*0.3; // Yaw speed gain
+// float Kv3 = -20*0.55; // Pitch speed gain
+
 float Kp1 = -7; // Linear postion gain
 float Kp2 = -50; // Yaw gain
 float Kp3 = -95;//-105; // Pitch gain
 float Kv1 = -5; // Linear velocity gain
 float Kv2 = -10; // Yaw speed gain
 float Kv3 = -20; // Pitch speed gain
+
 Eigen::Vector3d feedbck;
 Eigen::Vector2d output_trq;
 float L = 0.513; // CoM height
-float trq_r, trq_l = 0;
+float lqr_trq_r, lqr_trq_l, CT_trq_r, CT_trq_l, trq_r, trq_l  = 0;
 
 float igorForwardPosition = 0;
 float igorForwardVel = 0;

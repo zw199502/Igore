@@ -34,7 +34,7 @@
     <d_on_error>1 1</d_on_error>
   </velocity>
   <effort>
-    <kp>0.25 0.25</kp>
+    <kp>0.3 0.3</kp>
     <ki>0 0</ki>
     <kd>0.0 0.0</kd>
     <feed_forward>1 1</feed_forward>

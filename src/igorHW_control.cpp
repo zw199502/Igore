@@ -46,21 +46,7 @@ void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg)
         CoG_pitch_vel = -10;
     }
 
-    
-
-    
-
-    //plot_vector.x = CoG_pitch_vel;
-    //plot_vector.y = CoG_pitch;
-    
-
-
-
-    // ROS_INFO("Center link roll: %f", roll);
-    // ROS_INFO("Center link pitch: %f", pitch);
-    // ROS_INFO("CoG height: %f", CoM_height);
-    // ROS_INFO("CoG pitch: %f", CoG_pitch);
-    // ROS_INFO("Center link X: %f", centerLinkTranslation.x);
+    ROS_INFO("CoM Height %f",CoM_height);
     
 
 }// End of CoG_callback
@@ -108,31 +94,44 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
     // Publishing states for ploting
     plot_vector.data[0] = igorState(0); // Forward position
-    plot_vector.data[1] = igorState(1); // Yaw
+    //plot_vector.data[1] = igorState(1); // Yaw
     plot_vector.data[2] = igorState(2); // Pitch
-    plot_vector.data[3] = igorState(3); // Forward Velocity
+    //plot_vector.data[3] = igorState(3); // Forward Velocity
     plot_vector.data[4] = igorState(4); // Yaw Velocity
-    plot_vector.data[5] = igorState(5); // Pitch Velocity
-    
+    //plot_vector.data[5] = igorState(5); // Pitch Velocity
+    plot_vector.data[8] = baseY;
     ROS_INFO("Pitch angle %f",igorState(2));
 
-    CT_controller(igorState); // Calling CT controller
+    //CT_controller(igorState); // Calling CT controller
     //LQR_controller(igorState); // Calling LQR controller
-    //ff_fb_controller();
+    ff_fb_controller();
 
 } // End of odom_callback
 
 void ref_update(){
 
     ROS_INFO("In ref update");
+    wall_duration = ros::WallTime::now() - wall_begin;
+    ROS_INFO("WALL:%u.%09u", wall_duration.sec, wall_duration.nsec);
     // Reference states
-    refState(0) = 0*(sin(0.3*ros::Time::now().toSec())); // Center Position 
-    refState(1) = 0*0.785398*(cos(0.3*ros::Time::now().toSec())); // Yaw
-    refState(2) = -0.004*0; // Pitch
-    refState(3) = 0.0; // Center velocity
-    refState(4) = 0.0; // Yaw velocity
-    refState(5) = 0.0; // Pitch velocity
+    if (wall_duration.sec>=10){
+        //plot_vector.data[1] = refState(0) = 0.5*(sin(0.7*ros::Time::now().toSec())); // Center Position
+        plot_vector.data[1] = refState(0) = 0.5; // Center Position  
+        plot_vector.data[3] = refState(1) = 0*0.785398*(cos(0.3*ros::Time::now().toSec())); // Yaw
+        plot_vector.data[5] = refState(2) = -0.004*0; // Pitch
+        refState(3) = 0.0; // Center velocity
+        refState(4) = 0.0; // Yaw velocity
+        refState(5) = 0.0; // Pitch velocity
+    }
+    else{
+        plot_vector.data[1] = refState(0) = 0.0;
+        plot_vector.data[3] = refState(1) = 0.0;
+        plot_vector.data[5] = refState(2) = 0.0; // Pitch
+        refState(3) = 0.0; // Center velocity
+        refState(4) = 0.0; // Yaw velocity
+        refState(5) = 0.0; // Pitch velocity
 
+    }
     return;
 
 } // End of ref_update
@@ -191,8 +190,7 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     CT_trq_l = output_trq(0); // Left wheel torque
 
     
-    plot_vector.data[6] = CT_trq_l;
-    plot_vector.data[7] = CT_trq_r;
+    
 
     ROS_INFO("Right Torque %f", CT_trq_r);
     ROS_INFO("Left Torque %f", CT_trq_l);
@@ -200,9 +198,11 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
     (*wheelGroupCommand)[1].actuator().effort().set(-CT_trq_r); // Effort command to Right wheel
     (*wheelGroupCommand)[0].actuator().effort().set(CT_trq_l); // Effort command to Left wheel
-    wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+    // wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    publisher.publish(plot_vector);
+    // plot_vector.data[6] = CT_trq_l;
+    // plot_vector.data[7] = CT_trq_r;
+    // array_publisher.publish(plot_vector);
 
 
     return;
@@ -230,12 +230,12 @@ void LQR_controller(Eigen::VectorXf vec)
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
     (*wheelGroupCommand)[1].actuator().effort().set(-lqr_trq_r); // Effort command to Right wheel
     (*wheelGroupCommand)[0].actuator().effort().set(lqr_trq_l); // Effort command to Left wheel
-    //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+    // wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    plot_vector.data[6] = lqr_trq_l; // left wheel torque
-    plot_vector.data[7] = lqr_trq_r; // right wheel torque
+    // plot_vector.data[6] = lqr_trq_l; // left wheel torque
+    // plot_vector.data[7] = lqr_trq_r; // right wheel torque
     
-    publisher.publish(plot_vector);
+    // array_publisher.publish(plot_vector);
 
     return;
 
@@ -256,7 +256,13 @@ void ff_fb_controller() // feedforward+feedback controller
     (*wheelGroupCommand).clear(); // Clearing the previous group commands
     (*wheelGroupCommand)[1].actuator().effort().set(-trq_r); // Effort command to Right wheel
     (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
-    //wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+    wheel_group->sendCommand(*wheelGroupCommand); // Send commands
+
+    plot_vector.data[6] = trq_l; // left wheel torque
+    plot_vector.data[7] = trq_r; // right wheel torque
+    array_publisher.publish(plot_vector);
+
+    return;
 
 }// End of ff_fb_controller
 
@@ -280,6 +286,8 @@ void igorConfig(const ros::TimerEvent& e) // Lower body configuration
     (*hipGroupCommand).clear(); // Clearing the previous group commands
     (*hipGroupCommand)[1].actuator().position().set(rightHipPos); // Position command to Right hip
     (*hipGroupCommand)[0].actuator().position().set(leftHipPos); // Position command to Left hip
+    (*hipGroupCommand)[1].actuator().velocity().set(0.0); // Velocity command to Right hip
+    (*hipGroupCommand)[0].actuator().velocity().set(0.0); // Velocity command to Left hip
     
     hip_group->sendCommand(*hipGroupCommand);
     knee_group->sendCommand(*kneeGroupCommand);
@@ -353,8 +361,8 @@ int main(int argc, char **argv)
     leftLegTfListener = new tf2_ros::TransformListener(leftLegTfBuffer);
     rightLegTfListener = new tf2_ros::TransformListener(rightLegTfBuffer);
     
-    publisher = nh.advertise<std_msgs::Float32MultiArray>( "/igor/plotVec", 5);
-    plot_vector.data.resize(8);
+    array_publisher = nh.advertise<std_msgs::Float32MultiArray>( "/igor/plotVec", 5);
+    plot_vector.data.resize(9);
 
     // Computed-torque controller's gain
     Kp(0,0) = Kp1;
@@ -387,6 +395,16 @@ int main(int argc, char **argv)
     V_h(2,0) = -4.9213;
     V_h(2,1) =  0; 
     V_h(2,2) =  0.5000;
+    
+    // V_h(0,0) = 45.5313;  
+    // V_h(0,1) = -0.6248;
+    // V_h(0,2) = -4.6260;
+    // V_h(1,0) = -0.6248; 
+    // V_h(1,1) =  2.1047;
+    // V_h(1,2) =  0.0635;
+    // V_h(2,0) = -4.6260;
+    // V_h(2,1) =  0.0635; 
+    // V_h(2,2) =  0.4700;
 
     // Torque selection matrix
     E_h_inv(0,0) = 0.0503;   
@@ -398,49 +416,50 @@ int main(int argc, char **argv)
 
 
     // LQR gains for ff_fb_controller
-    // k_r(0,0)= k_l(0,0) = 0.55*(-0.7071); // Forward position gain -ve
-    // k_r(0,1)= 0.5*(0.7071); // Yaw gain +ve
-    // k_r(0,2)= k_l(0,2) = 0.52*(-15.7478); // Pitch gain -ve
-    // k_r(0,3)= k_l(0,3) = 0.35*(-3.5132); // Forward speed gain -ve
-    // k_r(0,4)= 0.3*(0.4236); // Yaw speed gain +ve
-    // k_r(0,5)= k_l(0,5)= 0.55*(-3.1353); // Pitch speed gain -ve
-    // k_l(0,1)= -1*k_r(0,1);
-    // k_l(0,4)= -1*k_r(0,4);
-
-    // LQR gains
-    k_r(0,0)= k_l(0,0) = 4*(-0.7071); // Forward position gain -ve
-    k_r(0,1)= (0.7071); // Yaw gain +ve
-    k_r(0,2)= k_l(0,2) = 1.5*(-17.8052); // Pitch gain -ve
-    k_r(0,3)= k_l(0,3) = (-4.4623); // Forward speed gain -ve
-    k_r(0,4)= (0.3753); // Yaw speed gain +ve
-    k_r(0,5)= k_l(0,5)= (-3.6424); // Pitch speed gain -ve
+    k_r(0,0)= k_l(0,0) = 1*(-0.7071); // Forward position gain -ve
+    k_r(0,1)= 1*(0.7071); // Yaw gain +ve
+    k_r(0,2)= k_l(0,2) = 1*(-16.2331); // Pitch gain -ve
+    k_r(0,3)= k_l(0,3) = 0.65*(-4.8849); // Forward speed gain -ve
+    k_r(0,4)= 0.5*(0.4032); // Yaw speed gain +ve
+    k_r(0,5)= k_l(0,5)= 1.2*(-3.1893); // Pitch speed gain -ve
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 
+    // LQR gains
+    // k_r(0,0)= k_l(0,0) = 4*(-0.7071); // Forward position gain -ve
+    // k_r(0,1)= 2*(0.7071); // Yaw gain +ve
+    // k_r(0,2)= k_l(0,2) = 1.2*(-16.2331); // Pitch gain -ve
+    // k_r(0,3)= k_l(0,3) = (-4.8849); // Forward speed gain -ve
+    // k_r(0,4)= (0.4032); // Yaw speed gain +ve
+    // k_r(0,5)= k_l(0,5)= 1.5*(-3.1893); // Pitch speed gain -ve
+    // k_l(0,1)= -1*k_r(0,1);
+    // k_l(0,4)= -1*k_r(0,4);
+
+
     // LQR testing
-    // k_r(0,0) = -0.7593; // Forward position gain -ve
-    // k_l(0,0) = -0.6507;
-    // k_r(0,1) = 0.6507; // Yaw gain +ve
-    // k_l(0,1) = -0.7593;
-    // k_r(0,2) = -17.0732; // Pitch gain -ve
-    // k_l(0,2) = -16.4604;
-    // k_r(0,3) = 0.85*-4.9993; // Forward speed gain -ve
-    // k_l(0,3) = 0.85*-4.9688;
-    // k_r(0,4) = 0.4330; // Yaw speed gain +ve
-    // k_l(0,4) = -0.3663;
-    // k_r(0,5) = -3.4326; // Pitch speed gain -ve
-    // k_l(0,5) = -3.3422;
+    // k_r(0,0) = 2*-0.5991; // Forward position gain -ve
+    // k_l(0,0) = 2*-0.8007;
+    // k_r(0,1) = 1.5*0.8007; // Yaw gain +ve
+    // k_l(0,1) = 1.5*-0.5991;
+    // k_r(0,2) = -15.3053; // Pitch gain -ve
+    // k_l(0,2) = -16.2986;
+    // k_r(0,3) = 0.85*-4.5527; // Forward speed gain -ve
+    // k_l(0,3) = 0.85*-4.4862;
+    // k_r(0,4) = 0.3549; // Yaw speed gain +ve
+    // k_l(0,4) = -0.5038;
+    // k_r(0,5) = -3.0913; // Pitch speed gain -ve
+    // k_l(0,5) = -3.2145;
     
     
 
     ros::Duration(2).sleep(); // Sleep for 2 seconds
     
 
+
     CoG_sub = nh.subscribe<geometry_msgs::PointStamped>("/cog/robot",2, CoG_callback);
     odom_sub = nh.subscribe<nav_msgs::Odometry>("/odometry/filtered",2, odom_callback, ros::TransportHints().tcpNoDelay());
     
-    
-        
+    wall_begin = ros::WallTime::now();   
     //ros::spin();
     ros::MultiThreadedSpinner spinner(2); // Use 2 threads for 2 callbacks in parallel
     spinner.spin(); // spin() will not return until the node has been shutdown

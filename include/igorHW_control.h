@@ -5,6 +5,7 @@
 #include <ros/console.h>
 #include <Eigen/Dense>
 #include <math.h>
+#include "rosgraph_msgs/Clock.h"
 #include "hebi_cpp_api/lookup.hpp"
 #include "hebi_cpp_api/group.hpp"
 #include "hebi_cpp_api/group_command.hpp"
@@ -38,9 +39,10 @@ std::shared_ptr<hebi::Group> knee_group = NULL;
 std::shared_ptr<hebi::Group> hip_group = NULL;
 std::shared_ptr<hebi::Group> wheel_group = NULL;
 
-ros::Subscriber CoG_sub, odom_sub;
-//ros::Subscriber odom_sub;
-ros::Publisher  publisher;
+ros::Subscriber CoG_sub, odom_sub; // creating ROS subscriber
+ros::Publisher  array_publisher;
+ros::WallTime wall_begin;
+ros::WallDuration wall_duration;
 
 void CT_controller(Eigen::VectorXf vec); // Function prototype, its declaration
 void LQR_controller(Eigen::VectorXf vec);
@@ -100,19 +102,19 @@ Eigen::Vector3d velocities;
 Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
 Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
 // CT gains for ff_fb_controller
-// float Kp1 = -7*0.5; // Linear postion gain
-// float Kp2 = -50*0.5; // Yaw gain
-// float Kp3 = -95*0.5;//-105; // Pitch gain
-// float Kv1 = -5*0.35; // Linear velocity gain
-// float Kv2 = -10*0.3; // Yaw speed gain
-// float Kv3 = -20*0.55; // Pitch speed gain
+float Kp1 = -7*1.3; // Linear postion gain
+float Kp2 = -50*0.5; // Yaw gain
+float Kp3 = -95*0.6;//-105; // Pitch gain
+float Kv1 = -5*0.53; // Linear velocity gain
+float Kv2 = -10*0.3; // Yaw speed gain
+float Kv3 = -20*0.65; // Pitch speed gain
 
-float Kp1 = -7; // Linear postion gain
-float Kp2 = -50; // Yaw gain
-float Kp3 = -95;//-105; // Pitch gain
-float Kv1 = -5; // Linear velocity gain
-float Kv2 = -10; // Yaw speed gain
-float Kv3 = -20; // Pitch speed gain
+// float Kp1 = -7*0.9; // Linear postion gain
+// float Kp2 = -50*1.2; // Yaw gain
+// float Kp3 = -95;//-105; // Pitch gain
+// float Kv1 = -5*0.8; // Linear velocity gain
+// float Kv2 = -10; // Yaw speed gain
+// float Kv3 = -20; // Pitch speed gain
 
 Eigen::Vector3d feedbck;
 Eigen::Vector2d output_trq;

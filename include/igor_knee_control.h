@@ -6,12 +6,13 @@
 #include "sensor_msgs/JointState.h"
 #include <vector>
 #include <queue> // std::queue
-#include <deque>          // std::deque
+#include <deque> // std::deque
 #include "geometry_msgs/Quaternion.h"
 #include "tf/transform_datatypes.h"
 #include "geometry_msgs/Vector3.h"
 #include "std_msgs/Header.h"
 #include "std_msgs/Float64.h"
+#include <std_msgs/Float32MultiArray.h>
 #include "std_msgs/Bool.h"
 #include <Eigen/Dense>
 #include <math.h>
@@ -37,6 +38,7 @@
 #include <tf2_ros/buffer.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/Marker.h>
+#include "rosgraph_msgs/Clock.h"
 //#include "Iir.h" // iir filter library
 #include <gram_savitzky_golay/gram_savitzky_golay.h> //gram_savitzky_golay lib
 #include <boost/circular_buffer.hpp>
@@ -96,6 +98,7 @@ private:
     std_msgs::Float64 trq_l;
     std_msgs::Float64 knee_ref;
     std_msgs::Float64 hip_ref;
+    std_msgs::Float32MultiArray plot_vector;
 
     float L = 0;
 
@@ -137,11 +140,10 @@ private:
     ros::Subscriber sub_body_imu; // creating ROS subscriber
     ros::Subscriber sub_odom; // creating ROS subscriber
     ros::Subscriber sub_CoG; // creating ROS subscriber
+    ros::Subscriber clk_subscriber; // creating ROS subscriber
     
 
     
-    ros::Publisher  state_pub; // creating ROS publisher
-    ros::Publisher  state_pub2; // creating ROS publisher
     ros::Publisher  Lwheel_pub; // creating ROS publisher
     ros::Publisher  Rwheel_pub; // creating ROS publisher
     ros::Publisher  Lknee_pub; // creating ROS publisher
@@ -150,7 +152,7 @@ private:
     ros::Publisher  Rhip_pub; // creating ROS publisher
     ros::Publisher  zram_pub; // creating ROS publisher
     ros::Publisher  f_pub; // creating ROS publisher
-    //ros::Publisher  plot_publisher;
+    ros::Publisher  plot_publisher;
     
 
 
@@ -158,12 +160,11 @@ private:
     //void joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg);
     void odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
     void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
-    void statePub (geometry_msgs::Vector3 x);
-    void statePub2 (geometry_msgs::Vector3 x);
     void lqr_controller(Eigen::VectorXf eig_vec);
     void CT_controller(Eigen::VectorXf eig_vec);
     void ff_fb_controller();
     void ref_update();
+    void clk_callback(const rosgraph_msgs::Clock::ConstPtr &msg);
 
     Eigen::Vector2f trig_vec; // declaring 2X1 Eigen vector of datatype float
     Eigen::MatrixXf pos_vec = Eigen::MatrixXf(1,2);
@@ -196,12 +197,22 @@ private:
     Eigen::Vector3d velocities;
     Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
     Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
-    float Kp1 = -7;//-2; // Linear postion gain
-    float Kp2 = -50;//-30; // Yaw gain
-    float Kp3 = -95;//-95; // Pitch gain
-    float Kv1 = -5;//-8;//-0.75; // Linear velocity gain
+
+    // CT gains for ff_fb_controller
+    // float Kp1 = -7*1.3; // Linear postion gain
+    // float Kp2 = -50*0.5; // Yaw gain
+    // float Kp3 = -95*0.6;//-105; // Pitch gain
+    // float Kv1 = -5*0.53; // Linear velocity gain
+    // float Kv2 = -10*0.3; // Yaw speed gain
+    // float Kv3 = -20*0.65; // Pitch speed gain
+
+    float Kp1 = -6.3; // Linear postion gain
+    float Kp2 = -60; // Yaw gain
+    float Kp3 = -95;//-105; // Pitch gain
+    float Kv1 = -4; // Linear velocity gain
     float Kv2 = -10; // Yaw speed gain
-    float Kv3 = -20;//-15; // Pitch speed gain
+    float Kv3 = -20; // Pitch speed gain
+    
     Eigen::Vector3d feedbck;
     Eigen::Vector2d output_trq;
 
@@ -211,7 +222,7 @@ private:
     //tf::Vector3 rot_axis{0,1,0};
     tf::Matrix3x3 pitchRotation;
     
-
+    ros::Time sim_time;
     ros::ServiceClient client;
     std_srvs::Empty srv;
 
@@ -222,7 +233,6 @@ public:
 
     float pitch_vel_y = 0;
     float yaw_vel_z = 0;
-    //float M_pi = 3.1415;
     //float freq = 0;
     geometry_msgs::Vector3 state_vec;
     geometry_msgs::Vector3 state_vec2;

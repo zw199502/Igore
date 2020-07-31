@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="igor_wheel">
 
-	<xacro:macro name="igor_wheel" params="prefix flip reflect damping *joint_pose">
+	<xacro:macro name="igor_wheel" params="prefix flip reflect damping static_friction *joint_pose">
 
 		<link name="${prefix}_wheel">
 			<visual>
@@ -48,9 +48,9 @@
 			<xacro:insert_block name="joint_pose"/>
 			<parent link="${prefix}_wheelActuator"/>
 			<child  link="${prefix}_wheel"/>
-			<limit effort="3" velocity="20"/>  <!-- effort limit in N (prismatic) or N.m (revolute), Velocity limit in m/s or rad/s -->
+			<limit effort="3" velocity="12"/>  <!-- effort limit in N (prismatic) or N.m (revolute), Velocity limit in m/s or rad/s -->
 			<axis xyz="0 1 0"/>
-			<dynamics damping="${damping}" friction="0.0011"/>
+			<dynamics damping="${damping}" friction="${static_friction}"/>
 		</joint>
 
     		<!--transmission name="Diff_${prefix}_wheel_trans">

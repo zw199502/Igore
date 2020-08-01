@@ -15,7 +15,9 @@
 	<!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /--> <!--Only for GUI to change joint states /-->
 	<!--node name="igor_test" pkg="igor" type="example_01_lookup_node" output="screen" /-->
 	<node name="igor_jointState_publisher" pkg="igor" type="igor_jointstate_node" output="screen" />
-        
+
+        <node pkg="rosbag" type="record" name="rosbag_record_standard_data" respawn="true" output="screen" args="-o $(find igor)/bags /igor/plotVec" />
+	
 	<node name="cog_publisher_node" pkg="robot_kinetics" type="cog_publisher_node" output="screen" respawn="true">
   	</node>
         <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">

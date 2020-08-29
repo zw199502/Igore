@@ -2,7 +2,7 @@
 
 <launch>
 
- 	<arg name="model" default="Igor_knee.urdf.xacro"/>
+ 	<arg name="model" default="Igor_armed.urdf.xacro"/>
   	<arg name="paused" default="true"/>
   	<arg name="use_sim_time" default="true"/>
 	<arg name="gui" default="true"/>
@@ -77,7 +77,9 @@
 				R_kfe_joint_position_controller
 				R_hfe_joint_position_controller
 				R_wheel_joint_effort_controller
-				L_wheel_joint_effort_controller">
+				L_wheel_joint_effort_controller
+				Upper_arm_joint_effort_controller
+				Fore_arm_joint_effort_controller">
 	</node>
 
   	<!--node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">

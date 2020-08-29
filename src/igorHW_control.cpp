@@ -95,11 +95,11 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
     // Publishing states for ploting
     plot_vector.data[0] = igorState(0); // Forward position
     //plot_vector.data[1] = igorState(1); // Yaw
-    plot_vector.data[2] = igorState(2); // Pitch
+    plot_vector.data[2] = igorState(1); // Yaw
     //plot_vector.data[3] = igorState(3); // Forward Velocity
-    plot_vector.data[4] = igorState(4); // Yaw Velocity
-    //plot_vector.data[5] = igorState(5); // Pitch Velocity
-    plot_vector.data[8] = baseY;
+    plot_vector.data[4] = igorState(2); // Pitch
+    plot_vector.data[6] = igorState(3); // Forward Velocity
+    plot_vector.data[9] = baseY;
     ROS_INFO("Pitch angle %f",igorState(2));
 
     //CT_controller(igorState); // Calling CT controller
@@ -116,8 +116,8 @@ void ref_update(){
     // Reference states
     if (wall_duration.sec>=10){
         //plot_vector.data[1] = refState(0) = 0.5*(sin(0.7*ros::Time::now().toSec())); // Center Position
-        plot_vector.data[1] = refState(0) = 0.5; // Center Position  
-        plot_vector.data[3] = refState(1) = 0*0.785398*(cos(0.3*ros::Time::now().toSec())); // Yaw
+        plot_vector.data[1] = refState(0) = 0.5*0; // Center Position  
+        plot_vector.data[3] = refState(1) = M_PI/4*(cos(0.3*ros::Time::now().toSec())); // Yaw
         plot_vector.data[5] = refState(2) = -0.004*0; // Pitch
         refState(3) = 0.0; // Center velocity
         refState(4) = 0.0; // Yaw velocity
@@ -192,15 +192,15 @@ void CT_controller(Eigen::VectorXf vec) // Computed Torque controller
     
     
 
-    ROS_INFO("Right Torque %f", CT_trq_r);
-    ROS_INFO("Left Torque %f", CT_trq_l);
+    // ROS_INFO("Right Torque %f", CT_trq_r);
+    // ROS_INFO("Left Torque %f", CT_trq_l);
 
-    (*wheelGroupCommand).clear(); // Clearing the previous group commands
-    (*wheelGroupCommand)[1].actuator().effort().set(-CT_trq_r); // Effort command to Right wheel
-    (*wheelGroupCommand)[0].actuator().effort().set(CT_trq_l); // Effort command to Left wheel
+    // (*wheelGroupCommand).clear(); // Clearing the previous group commands
+    // (*wheelGroupCommand)[1].actuator().effort().set(-CT_trq_r); // Effort command to Right wheel
+    // (*wheelGroupCommand)[0].actuator().effort().set(CT_trq_l); // Effort command to Left wheel
     // wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    // plot_vector.data[6] = CT_trq_l;
+    // plot_vector.data[8] = CT_trq_l;
     // plot_vector.data[7] = CT_trq_r;
     // array_publisher.publish(plot_vector);
 
@@ -216,23 +216,23 @@ void LQR_controller(Eigen::VectorXf vec)
 
     ref_update();
     ROS_INFO("In LQR controller");
-    ROS_INFO("Yaw Reference: %f", refState(1));
+    //ROS_INFO("Yaw Reference: %f", refState(1));
 
     
     lqr_trq_r =  (k_r*(refState-vec)).value(); // taking the scalar value of the eigen-matrx
         
     lqr_trq_l =  (k_l*(refState-vec)).value();
 
-    ROS_INFO("Right LQR Torque %f", lqr_trq_r);
-    ROS_INFO("Left LQR Torque %f", lqr_trq_l);
-    ROS_INFO("Yaw error %f", (refState(1)-vec(1)));
+    // ROS_INFO("Right LQR Torque %f", lqr_trq_r);
+    // ROS_INFO("Left LQR Torque %f", lqr_trq_l);
+    // ROS_INFO("Yaw error %f", (refState(1)-vec(1)));
 
-    (*wheelGroupCommand).clear(); // Clearing the previous group commands
-    (*wheelGroupCommand)[1].actuator().effort().set(-lqr_trq_r); // Effort command to Right wheel
-    (*wheelGroupCommand)[0].actuator().effort().set(lqr_trq_l); // Effort command to Left wheel
+    // (*wheelGroupCommand).clear(); // Clearing the previous group commands
+    // (*wheelGroupCommand)[1].actuator().effort().set(-lqr_trq_r); // Effort command to Right wheel
+    // (*wheelGroupCommand)[0].actuator().effort().set(lqr_trq_l); // Effort command to Left wheel
     // wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    // plot_vector.data[6] = lqr_trq_l; // left wheel torque
+    // plot_vector.data[8] = lqr_trq_l; // left wheel torque
     // plot_vector.data[7] = lqr_trq_r; // right wheel torque
     
     // array_publisher.publish(plot_vector);
@@ -246,7 +246,7 @@ void ff_fb_controller() // feedforward+feedback controller
 {
 
     ROS_INFO("In ff_fb_controller");
-    ROS_INFO("Yaw Reference: %f", refState(1));
+    //ROS_INFO("Yaw Reference: %f", refState(1));
 
     CT_controller(igorState); // Calling CT controller
     LQR_controller(igorState); // Calling LQR controller
@@ -258,7 +258,7 @@ void ff_fb_controller() // feedforward+feedback controller
     (*wheelGroupCommand)[0].actuator().effort().set(trq_l); // Effort command to Left wheel
     wheel_group->sendCommand(*wheelGroupCommand); // Send commands
 
-    plot_vector.data[6] = trq_l; // left wheel torque
+    plot_vector.data[8] = trq_l; // left wheel torque
     plot_vector.data[7] = trq_r; // right wheel torque
     array_publisher.publish(plot_vector);
 
@@ -362,7 +362,7 @@ int main(int argc, char **argv)
     rightLegTfListener = new tf2_ros::TransformListener(rightLegTfBuffer);
     
     array_publisher = nh.advertise<std_msgs::Float32MultiArray>( "/igor/plotVec", 5);
-    plot_vector.data.resize(9);
+    plot_vector.data.resize(10);
 
     // Computed-torque controller's gain
     Kp(0,0) = Kp1;
@@ -421,7 +421,7 @@ int main(int argc, char **argv)
     k_r(0,2)= k_l(0,2) = 1*(-16.2331); // Pitch gain -ve
     k_r(0,3)= k_l(0,3) = 0.65*(-4.8849); // Forward speed gain -ve
     k_r(0,4)= 0.5*(0.4032); // Yaw speed gain +ve
-    k_r(0,5)= k_l(0,5)= 1.2*(-3.1893); // Pitch speed gain -ve
+    k_r(0,5)= k_l(0,5)= 1.1*(-3.1893); // Pitch speed gain -ve
     k_l(0,1)= -1*k_r(0,1);
     k_l(0,4)= -1*k_r(0,4);
 

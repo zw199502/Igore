@@ -104,11 +104,12 @@ Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
 // CT gains for ff_fb_controller
 float Kp1 = -7*1.3; // Linear postion gain
 float Kp2 = -50*0.5; // Yaw gain
-float Kp3 = -95*0.6;//-105; // Pitch gain
+float Kp3 = -95*0.65;//-105; // Pitch gain
 float Kv1 = -5*0.53; // Linear velocity gain
 float Kv2 = -10*0.3; // Yaw speed gain
 float Kv3 = -20*0.65; // Pitch speed gain
 
+// CT gains
 // float Kp1 = -7*0.9; // Linear postion gain
 // float Kp2 = -50*1.2; // Yaw gain
 // float Kp3 = -95;//-105; // Pitch gain

@@ -304,8 +304,8 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
  
     plot_vector.data[4] = igor_state(2);
 
-    this->lqr_controller(igor_state);
-    //this->CT_controller(igor_state);
+    //this->lqr_controller(igor_state);
+    this->CT_controller(igor_state);
     //this->ff_fb_controller();
 
 
@@ -330,31 +330,27 @@ void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedbac
         lqr_left_trq = lqr_trq_l.data =  (k_l*(ref_state-vec)).value();
         
 
-        Lwheel_pub.publish(lqr_trq_l); // Publish left wheel torque
-        Rwheel_pub.publish(lqr_trq_r); // Publish right wheel torque
+        // Lwheel_pub.publish(lqr_trq_l); // Publish left wheel torque
+        // Rwheel_pub.publish(lqr_trq_r); // Publish right wheel torque
 
-        // Lhip_pub.publish(hip_ref); // Publish left hip
-        // Rhip_pub.publish(hip_ref); // Publish right hip
     
-        // Lknee_pub.publish(knee_ref); // Publish left knee
-        // Rknee_pub.publish(knee_ref); // Publish right knee
 
        
     }
     else if (igor_state(2)<= -1.4 || igor_state(2) >= 1.4){
         lqr_right_trq = lqr_trq_r.data = 0;
         lqr_left_trq = lqr_trq_l.data = 0;
-        Lwheel_pub.publish(lqr_trq_l);
-        Rwheel_pub.publish(lqr_trq_r);
+        // Lwheel_pub.publish(lqr_trq_l);
+        // Rwheel_pub.publish(lqr_trq_r);
         
         ROS_INFO("Reseting Model");
         ros::Duration(0.5).sleep(); // sleep for half a second
         client.call(srv); // Calling the service to reset robot model in gazebo
     }
     
-    plot_vector.data[7] = lqr_right_trq;
-    plot_vector.data[8] = lqr_left_trq;
-    plot_publisher.publish(plot_vector);
+    // plot_vector.data[7] = lqr_right_trq;
+    // plot_vector.data[8] = lqr_left_trq;
+    // plot_publisher.publish(plot_vector);
 
     
 } // End of lqr_controller
@@ -410,18 +406,13 @@ void igor_knee_control::CT_controller(Eigen::VectorXf vec) // Computed Torque co
     CT_trq_l.data = output_trq(0); // Left wheel torque
     
     
-    // Lwheel_pub.publish(CT_trq_l);
-    // Rwheel_pub.publish(CT_trq_r);
+    Lwheel_pub.publish(CT_trq_l);
+    Rwheel_pub.publish(CT_trq_r);
     
-    // Lhip_pub.publish(hip_ref);
-    // Rhip_pub.publish(hip_ref);
-    
-    // Lknee_pub.publish(knee_ref);
-    // Rknee_pub.publish(knee_ref);
 
-    // plot_vector.data[7] = output_trq(1); // Right wheel torque
-    // plot_vector.data[8] = output_trq(0); // Left wheel torque
-    // plot_publisher.publish(plot_vector);
+    plot_vector.data[7] = output_trq(1); // Right wheel torque
+    plot_vector.data[8] = output_trq(0); // Left wheel torque
+    plot_publisher.publish(plot_vector);
 
 
 }// End of CT_controller
@@ -449,10 +440,10 @@ void igor_knee_control::ref_update()
 
     ROS_INFO("In ref_update");
 
-    if (sim_time.toSec()>=10){
-        ref_state(0) = 0.5; // forward position
+    if (sim_time.toSec()>=5){
+        //ref_state(0) = 0.5; // forward position
         //ref_state(0) = 0.5*(sin(0.7*ros::Time::now().toSec())); // forward position
-        ref_state(1) = 0*M_PI/4*(cos(0.3*ros::Time::now().toSec())); // yaw
+        ref_state(1) = M_PI/4*(cos(0.3*ros::Time::now().toSec())); // yaw
 
     }
     else{

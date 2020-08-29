@@ -55,6 +55,16 @@ igor:
     joint: L_wheel_joint
     pid: {p: 200.0, i: 0.0, d: 1.0}
 
+  Upper_arm_joint_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: Upper_arm_joint
+    pid: {p: 100.0, i: 0.0, d: 1.0}
+
+  Fore_arm_joint_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: Fore_arm_joint
+    pid: {p: 100.0, i: 0.0, d: 1.0}
+
   diff_drive_controller:
     type        : diff_drive_controller/DiffDriveController
     left_wheel  : 'L_wheel_joint'

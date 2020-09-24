@@ -175,18 +175,23 @@
 		<origin xyz="${0} ${0} ${base_z_size/2 + 0.015}" rpy="${M_PI/2} 0 0" />
 	</xacro:igor_actuator>
 	
-	<xacro:arm prefix="Upper" reflect="1" flip="0">
-		<origin xyz="${0} ${actuator_y_size/2+lower_leg_radius} 0.0" rpy="0 ${M_PI/2} ${M_PI}" />
+	<xacro:arm prefix="Upper" reflect="-1" flip="0">
+		<origin xyz="${0} ${actuator_y_size/2+lower_leg_radius} ${0.0}" rpy="${-M_PI/2} ${0} ${0}" />
 	</xacro:arm>
 
 	<!--Forearm-->
 	<xacro:igor_actuator prefix="Fore_arm" reflect="1" parent_link="Upper_arm" flip="1">
-		<origin xyz="${0} ${actuator_y_size/1.2} -${lower_leg_length + actuator_z_size/2.3}" rpy="${0} ${M_PI/2} 0" />
+		<origin xyz="${lower_leg_length + actuator_z_size/2.3} ${0} -${actuator_y_size/1.2}" rpy="${M_PI/2} ${0} 0" />
 	</xacro:igor_actuator>
 	
-	<xacro:arm prefix="Fore" reflect="1" flip="0">
-		<origin xyz="${0} ${actuator_y_size/2+lower_leg_radius} 0.0" rpy="0 ${M_PI/2} ${M_PI}" />
+	<xacro:arm prefix="Fore" reflect="1" flip="1">
+		<origin xyz="${0} -${actuator_y_size/2+lower_leg_radius} 0.0" rpy="${-M_PI/2} ${0} ${0}" />
 	</xacro:arm>
+	
+	<!--Endeffector-->
+	<xacro:igor_actuator prefix="Endeffector" reflect="1" parent_link="Fore_arm" flip="1">
+		<origin xyz="${lower_leg_length + actuator_z_size/2.3} ${0} ${actuator_y_size/1.2}" rpy="${M_PI/2} ${0} 0" />
+	</xacro:igor_actuator>
 
 	
 	<!--Robot Center Dummy-->

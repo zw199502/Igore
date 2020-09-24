@@ -1,6 +1,6 @@
 #include "igor_knee_control.h"
 
-/***  This node is used to control Igor in Gazebo simulator. It has two controllers 1. LQR, 2. Computed Troque controller.
+/***  This node is used to control Igor in Gazebo simulator. It has three controllers 1. LQR, 2. Computed Troque controller, 3. Feedforward+feedback controller.
  *    Call one controller at a time.
  * 
  *    ***/
@@ -13,6 +13,7 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     sub_odom = nh_.subscribe<nav_msgs::Odometry>("/igor/odom",1, &igor_knee_control::odom_callback,this,ros::TransportHints().tcpNoDelay());
     sub_CoG = nh_.subscribe<geometry_msgs::PointStamped>("/cog/robot",1, &igor_knee_control::CoG_callback,this);
     clk_subscriber = nh_.subscribe<rosgraph_msgs::Clock>("/clock",10,&igor_knee_control::clk_callback,this);
+    joint_states_subscriber = nh_.subscribe<sensor_msgs::JointState>("/igor/joint_states",1, &igor_knee_control::joint_states_callback,this);
     
     zram_pub = nh_.advertise<geometry_msgs::Vector3>( "/igor/zramVec", 1 );
     f_pub = nh_.advertise<geometry_msgs::Vector3>( "/igor/fVec", 1 );
@@ -23,6 +24,8 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
     Lhip_pub = nh_.advertise<std_msgs::Float64>( "/igor/L_hfe_joint_position_controller/command", 1 );
     Rhip_pub = nh_.advertise<std_msgs::Float64>( "/igor/R_hfe_joint_position_controller/command", 1 );
     plot_publisher = nh_.advertise<std_msgs::Float32MultiArray>( "/igor/plotVec", 5);
+    upper_arm_pub = nh_.advertise<std_msgs::Float64>( "/igor/Upper_arm_joint_effort_controller/command", 1 );
+    fore_arm_pub = nh_.advertise<std_msgs::Float64>( "/igor/Fore_arm_joint_effort_controller/command", 1 );
     client = nh_.serviceClient<std_srvs::Empty>("/gazebo/reset_world"); // service client of gazebo service
 
     // LQR gains
@@ -98,6 +101,18 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
 
 
     plot_vector.data.resize(10); // Resizing std::msg array
+
+    // Manipulator gains
+
+    K_pos(0,0) = 25;
+    K_pos(0,1) = 0;
+    K_pos(1,0) = 0;
+    K_pos(1,1) = 25;
+
+    K_vel(0,0) = 7;
+    K_vel(0,1) = 0;
+    K_vel(1,0) = 0;
+    K_vel(1,1) = 7;
     
         
 } // End of constructor
@@ -206,8 +221,6 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
     pitchRotation.setRPY(0,pitch,0); // Setting Pitch rotation matrix
     tf::matrixTFToEigen(pitchRotation, pitchRotEigen); // Converting tf matrix to Eigen matrix
   
-    // CoG_angle = atan2(CoG_Position.x, CoG_Position.z) + pitch;
-    // CoG_angle = floorf(CoG_angle*10000)/10000;
 
     try
     { 
@@ -311,7 +324,70 @@ void igor_knee_control::CoG_callback(const geometry_msgs::PointStamped::ConstPtr
 
 } // End of CoG_callback
 
+void igor_knee_control::joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg)
+{
+    upper_arm_angle = (msg->position[7]);
+    fore_arm_angle = (msg->position[0]);
+    upper_arm_vel = (msg->velocity[7]);
+    fore_arm_vel = (msg->velocity[0]);
 
+    arm_angles(0) = upper_arm_angle;
+    arm_angles(1) = fore_arm_angle;
+
+    arm_angular_vel(0) = upper_arm_vel;
+    arm_angular_vel(1) = fore_arm_vel;
+    
+    // Two link arm Jacobian
+    J(0,0) = -l1*sin(upper_arm_angle)- l2*sin(upper_arm_angle + fore_arm_angle);
+    J(0,1) = -l2*sin(upper_arm_angle + fore_arm_angle);
+    J(1,0) = l1*cos(upper_arm_angle)+ l2*cos(upper_arm_angle + fore_arm_angle);
+    J(1,1) = l2*cos(upper_arm_angle + fore_arm_angle);
+
+    // Jacobian_dot
+    J_dot(0,0) = -l1*upper_arm_vel*cos(upper_arm_angle)-l2*(upper_arm_vel+fore_arm_vel)*cos(upper_arm_angle + fore_arm_angle);
+    J_dot(0,1) = -l2*(upper_arm_vel+fore_arm_vel)*cos(upper_arm_angle + fore_arm_angle);
+    J_dot(1,0) = -l1*upper_arm_vel*sin(upper_arm_angle)-l2*(upper_arm_vel+fore_arm_vel)*sin(upper_arm_angle + fore_arm_angle);
+    J_dot(1,1) = -l2*(upper_arm_vel+fore_arm_vel)*sin(upper_arm_angle + fore_arm_angle);
+
+    M(0,0) = I1 + I2 + arm_m1*lg1*lg1 + arm_m2*(l1*l1 + lg2*lg2 + 2*l1*lg2*cos(fore_arm_angle));
+    M(0,1) = I2 + arm_m2*(lg2*lg2+l1*lg2*cos(fore_arm_angle));
+    M(1,0) = I2 + arm_m2*(lg2*lg2+l1*lg2*cos(fore_arm_angle));
+    M(1,1) = I2 + arm_m2*lg2*lg2;
+    
+    N(0,0) = -arm_m2*l1*lg2*fore_arm_vel*(2*upper_arm_vel + fore_arm_vel)*sin(fore_arm_angle);
+    N(1,0) = arm_m2*l1*lg2*upper_arm_vel*upper_arm_vel*sin(fore_arm_angle);
+
+    EE_vel = J*arm_angular_vel; // X and Y velocities
+  
+    EE_pos(0) = l1*cos(upper_arm_angle) + l2*cos(upper_arm_angle + fore_arm_angle); // End-effector X position
+    EE_pos(1) = l1*sin(upper_arm_angle) + l2*sin(upper_arm_angle + fore_arm_angle); // End-effector Y position
+
+    EE_pos_err = EE_pos_ref-EE_pos;
+    EE_vel_err = EE_vel_ref-EE_vel;
+
+    //J_inv = J.completeOrthogonalDecomposition().pseudoInverse();
+    //feedb = J_inv*(K_pos*EE_pos_err + K_vel*EE_vel_err - J_dot*arm_angular_vel);
+    feedb = J.colPivHouseholderQr().solve(K_pos*EE_pos_err + K_vel*EE_vel_err - (J_dot*arm_angular_vel));
+
+    tau = M*feedb+N;
+    std::cout << "Arm angles : " << arm_angles << std::endl;
+    std::cout << "Arm speeds : " <<  arm_angular_vel << std::endl;
+    std::cout << "End-Effector position: " <<  EE_pos << std::endl;
+    std::cout << "End-Effector position error: " <<  EE_pos_err << std::endl;
+    std::cout << "J : " << J << std::endl;
+   // std::cout << "J Inverse: " << J_inv << std::endl;
+    std::cout << "J_dot : " << J_dot << std::endl;
+    std::cout << "feedback: " << feedb << std::endl;
+    std::cout << "Trq Vector: " << tau << std::endl;
+
+
+    upper_arm_trq.data = tau(0);
+    fore_arm_trq.data = tau(1);
+
+    upper_arm_pub.publish(upper_arm_trq);
+    fore_arm_pub.publish(fore_arm_trq);
+
+} // End of JointStatesCallback
 
 void igor_knee_control::lqr_controller (Eigen::VectorXf vec) //LQR State-feedback controller
 {
@@ -440,10 +516,15 @@ void igor_knee_control::ref_update()
 
     ROS_INFO("In ref_update");
 
+    EE_pos_ref(0) = 0.3; // X reference
+    EE_pos_ref(1) = 0.0; // Y reference
+    EE_vel_ref(0) = 0; // X velocity reference
+    EE_vel_ref(1) = 0; // Y velocity reference
+
     if (sim_time.toSec()>=5){
         //ref_state(0) = 0.5; // forward position
-        //ref_state(0) = 0.5*(sin(0.7*ros::Time::now().toSec())); // forward position
-        ref_state(1) = M_PI/4*(cos(0.3*ros::Time::now().toSec())); // yaw
+        ref_state(0) = 0.5*(sin(0.7*ros::Time::now().toSec())); // forward position
+        //ref_state(1) = M_PI/4*(cos(0.3*ros::Time::now().toSec())); // yaw
 
     }
     else{

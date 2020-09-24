@@ -85,24 +85,44 @@ private:
 
     float lqr_right_trq = 0;
     float lqr_left_trq = 0;
+
+    float upper_arm_angle = 0; 
+    float fore_arm_angle = 0;
+    float upper_arm_vel = 0; 
+    float fore_arm_vel = 0;
+    
     
     
     //ros::Duration dt{0}; //sampling time
 
-    double roll, pitch, yaw = 0.0;
+    double roll = 0; 
+    double pitch = 0; 
+    double yaw = 0.0;
     std_msgs::Float64 lqr_trq_r;
     std_msgs::Float64 lqr_trq_l;
     std_msgs::Float64 CT_trq_r;
     std_msgs::Float64 CT_trq_l;
     std_msgs::Float64 trq_r;
     std_msgs::Float64 trq_l;
+    std_msgs::Float64 upper_arm_trq;
+    std_msgs::Float64 fore_arm_trq;
     std_msgs::Float64 knee_ref;
     std_msgs::Float64 hip_ref;
     std_msgs::Float32MultiArray plot_vector;
 
     float L = 0;
+    const float l1 = 0.3; // arm lengths and center of gravity
+    const float l2 = 0.3;
+    const float lg1 = 0.3;
+    const float lg2 = 0.3;
+    const float I1 = 0.018; // Arm moment of inertia
+    const float I2 = 0.018; // Arm moment of inertia
+    const float arm_m1 = 0.6; // Arm masses
+    const float arm_m2 = 0.6; // Arm masses
 
-    float CoG_angle, leanAngle, CoM_height = 0;
+    float CoG_angle = 0; 
+    float leanAngle = 0; 
+    float CoM_height = 0;
 
     float CoG_angle_filtered = 0;
     //float CoG_angle_vel = 0;
@@ -141,6 +161,7 @@ private:
     ros::Subscriber sub_odom; // creating ROS subscriber
     ros::Subscriber sub_CoG; // creating ROS subscriber
     ros::Subscriber clk_subscriber; // creating ROS subscriber
+    ros::Subscriber joint_states_subscriber; // creating ROS subscriber
     
 
     
@@ -153,11 +174,13 @@ private:
     ros::Publisher  zram_pub; // creating ROS publisher
     ros::Publisher  f_pub; // creating ROS publisher
     ros::Publisher  plot_publisher;
+    ros::Publisher  upper_arm_pub;
+    ros::Publisher  fore_arm_pub;
     
 
 
     void body_imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
-    //void joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg);
+    void joint_states_callback(const sensor_msgs::JointState::ConstPtr &msg);
     void odom_callback(const nav_msgs::Odometry::ConstPtr &msg);
     void CoG_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
     void lqr_controller(Eigen::VectorXf eig_vec);
@@ -197,6 +220,25 @@ private:
     Eigen::Vector3d velocities;
     Eigen::MatrixXd Kp = Eigen::MatrixXd(3,3);
     Eigen::MatrixXd Kv = Eigen::MatrixXd(3,3);
+
+    Eigen::MatrixXf J = Eigen::MatrixXf(2,2); // Jacobian matrix
+    Eigen::MatrixXf J_inv = Eigen::MatrixXf(2,2); // Jacobian inverse matrix
+    Eigen::MatrixXf J_dot = Eigen::MatrixXf(2,2); // Jacobian_dot matrix
+    Eigen::MatrixXf M = Eigen::MatrixXf(2,2); // Inertia matrix
+    Eigen::MatrixXf K_pos = Eigen::MatrixXf(2,2); // Position gains for arm manipulator
+    Eigen::MatrixXf K_vel = Eigen::MatrixXf(2,2); // Velocity gains for arm manipulator
+    Eigen::Vector2f N;
+    Eigen::Vector2f arm_angles{0,0};
+    Eigen::Vector2f arm_angular_vel{0,0};
+    Eigen::Vector2f EE_vel{0,0}; // End-effector velocities
+    Eigen::Vector2f EE_vel_ref{0,0}; // End-effector reference velocities
+    Eigen::Vector2f EE_vel_err{0,0}; // End-effector velocities error
+    Eigen::Vector2f EE_pos{0,0}; // End-effector positions
+    Eigen::Vector2f EE_pos_ref{0,0}; // End-effector reference positions
+    Eigen::Vector2f EE_pos_err{0,0}; // End-effector positions error
+    Eigen::Vector2f feedb; // feedback
+    Eigen::Vector2f tau; // Manipulator torques
+
 
     // CT gains for ff_fb_controller
     // float Kp1 = -7*1.3; // Linear postion gain

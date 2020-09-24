@@ -1,3 +1,5 @@
+// Hardware joint states publisher //
+
 #include "ros/ros.h"
 #include "hebiros/EntryListSrv.h"
 #include "hebiros/AddGroupFromNamesSrv.h"
@@ -285,8 +287,8 @@ int main(int argc, char **argv)
         Rhip_quat.w = Rhip_orientation.get().getW();
 
         /** Useless part **/
-        // tf::quaternionMsgToTF(Rhip_quat, tf_quat);
         
+        // tf::quaternionMsgToTF(Rhip_quat, tf_quat);
         // rot_quat.setRPY(0,0,0);
         // tf_quat = tf_quat*rot_quat;
         // tf_quat.normalize();

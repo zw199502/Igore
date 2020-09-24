@@ -60,8 +60,18 @@ igor:
     joint: Upper_arm_joint
     pid: {p: 100.0, i: 0.0, d: 1.0}
 
+  Upper_arm_joint_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: Upper_arm_joint
+    pid: {p: 100.0, i: 0.0, d: 1.0}
+
   Fore_arm_joint_effort_controller:
     type: effort_controllers/JointEffortController
+    joint: Fore_arm_joint
+    pid: {p: 100.0, i: 0.0, d: 1.0}
+
+  Fore_arm_joint_position_controller:
+    type: effort_controllers/JointPositionController
     joint: Fore_arm_joint
     pid: {p: 100.0, i: 0.0, d: 1.0}
 

@@ -60,7 +60,7 @@
 	<!--node name="igor_controller" pkg="igor" type="igor_2d_controller_node" output="screen" /-->
 	<!--node name="igor_3d_controller" pkg="igor" type="igor_3d_controller_node" output="screen" /-->
 	<node name="igor_knee_controller" pkg="igor" type="igor_knee_controller_node" output="screen"/>
-	<!--node name="igor_disturber" pkg="igor" type="igor_disturber_node" output="screen" /-->
+	<node name="igor_disturber" pkg="igor" type="igor_disturber_node" output="screen" />
 	<node name="igor_odom_broadcaster" pkg="igor" type="igor_odom_broadcaster_node" /> <!-- For Igor_knee_controller only-->
 	<!--node name="igor_test_main" pkg="igor" type="igor_test_main_node" output="screen" /-->
 	<node name="igor_markers_node" pkg="igor" type="igor_markers_node" /> <!-- For Igor_knee_controller only-->

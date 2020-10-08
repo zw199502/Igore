@@ -238,6 +238,7 @@ private:
     Eigen::Vector2f EE_pos_err{0,0}; // End-effector positions error
     Eigen::Vector2f feedb; // feedback
     Eigen::Vector2f tau; // Manipulator torques
+    Eigen::Vector2f accl_d{0,0}; // Desired manipulator accelerations
 
 
     // CT gains for ff_fb_controller

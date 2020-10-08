@@ -58,7 +58,7 @@ private:
     float dt = 0.001; //sampling time of IMU (1000Hz)
     float last_pitch_vel = 0.0;
     float last_yaw_vel = 0.0;
-    double roll, pitch, yaw;
+    double roll = 0, pitch = 0, yaw = 0;
     std_msgs::Float64 trq_r;
     std_msgs::Float64 trq_l;
 

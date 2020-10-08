@@ -41,7 +41,7 @@ private:
     float igor_vel_x;
     float dt = 0.001; //sampling time of IMU (1000Hz)
     float last_ang_vel = 0.0;
-    double roll, pitch, yaw;
+    double roll = 0, pitch = 0, yaw = 0;
     std_msgs::Float64 trq;
     float sp1 = -0.0345; // position set point for PID
     float sp2 = 0.03401*70; // position set point for Poly PD

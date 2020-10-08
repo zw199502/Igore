@@ -51,11 +51,11 @@ void ref_update();
 
 
 geometry_msgs::Point CoG_Position;
-float CoG_pitch, leanAngle = 0; // Pitch angle of CoG
+float CoG_pitch = 0, leanAngle = 0; // Pitch angle of CoG
 float CoG_pitch_vel = 0; // pitch velocity of CoG
-double roll, pitch, yaw = 0.0;
-double baseRoll, basePitch, baseYaw, baseX, baseY = 0.0;
-float basePitchVelocity, baseYawVelocity, baseXVelocity, baseYVelocity = 0;
+double roll = 0, pitch = 0, yaw = 0.0;
+double baseRoll = 0, basePitch = 0, baseYaw = 0, baseX = 0, baseY = 0.0;
+float basePitchVelocity = 0, baseYawVelocity = 0, baseXVelocity = 0, baseYVelocity = 0;
 
 tf2_ros::Buffer leftLegTfBuffer, rightLegTfBuffer;
 tf2_ros::TransformListener* leftLegTfListener;
@@ -120,7 +120,7 @@ float Kv3 = -20*0.65; // Pitch speed gain
 Eigen::Vector3d feedbck;
 Eigen::Vector2d output_trq;
 float L = 0.513; // CoM height
-float lqr_trq_r, lqr_trq_l, CT_trq_r, CT_trq_l, trq_r, trq_l  = 0;
+float lqr_trq_r = 0, lqr_trq_l = 0, CT_trq_r = 0, CT_trq_l = 0, trq_r = 0, trq_l  = 0;
 
 float igorForwardPosition = 0;
 float igorForwardVel = 0;

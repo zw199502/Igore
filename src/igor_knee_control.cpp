@@ -104,15 +104,15 @@ igor_knee_control::igor_knee_control(ros::NodeHandle* nodehandle):nh_(*nodehandl
 
     // Manipulator gains
 
-    K_pos(0,0) = 25;
+    K_pos(0,0) = 18;
     K_pos(0,1) = 0;
     K_pos(1,0) = 0;
-    K_pos(1,1) = 25;
+    K_pos(1,1) = 18;
 
-    K_vel(0,0) = 7;
+    K_vel(0,0) = 3;
     K_vel(0,1) = 0;
     K_vel(1,0) = 0;
-    K_vel(1,1) = 7;
+    K_vel(1,1) = 3;
     
         
 } // End of constructor
@@ -365,20 +365,9 @@ void igor_knee_control::joint_states_callback(const sensor_msgs::JointState::Con
     EE_pos_err = EE_pos_ref-EE_pos;
     EE_vel_err = EE_vel_ref-EE_vel;
 
-    //J_inv = J.completeOrthogonalDecomposition().pseudoInverse();
-    //feedb = J_inv*(K_pos*EE_pos_err + K_vel*EE_vel_err - J_dot*arm_angular_vel);
-    feedb = J.colPivHouseholderQr().solve(K_pos*EE_pos_err + K_vel*EE_vel_err - (J_dot*arm_angular_vel));
+    feedb = J.colPivHouseholderQr().solve(accl_d+K_pos*EE_pos_err + K_vel*EE_vel_err - (J_dot*arm_angular_vel));
 
     tau = M*feedb+N;
-    std::cout << "Arm angles : " << arm_angles << std::endl;
-    std::cout << "Arm speeds : " <<  arm_angular_vel << std::endl;
-    std::cout << "End-Effector position: " <<  EE_pos << std::endl;
-    std::cout << "End-Effector position error: " <<  EE_pos_err << std::endl;
-    std::cout << "J : " << J << std::endl;
-   // std::cout << "J Inverse: " << J_inv << std::endl;
-    std::cout << "J_dot : " << J_dot << std::endl;
-    std::cout << "feedback: " << feedb << std::endl;
-    std::cout << "Trq Vector: " << tau << std::endl;
 
 
     upper_arm_trq.data = tau(0);
@@ -516,20 +505,33 @@ void igor_knee_control::ref_update()
 
     ROS_INFO("In ref_update");
 
-    EE_pos_ref(0) = 0.3; // X reference
-    EE_pos_ref(1) = 0.0; // Y reference
-    EE_vel_ref(0) = 0; // X velocity reference
-    EE_vel_ref(1) = 0; // Y velocity reference
 
-    if (sim_time.toSec()>=5){
-        //ref_state(0) = 0.5; // forward position
-        ref_state(0) = 0.5*(sin(0.7*ros::Time::now().toSec())); // forward position
+    if (sim_time.toSec()>=10 && sim_time.toSec()<=10.8){
+        ref_state(0) = 0*0.5; // forward position
+        //ref_state(0) = 0.5*(sin(0.7*ros::Time::now().toSec())); // forward position
         //ref_state(1) = M_PI/4*(cos(0.3*ros::Time::now().toSec())); // yaw
+
+        // EE_pos_ref(0) = 0.3; // X reference
+        // EE_pos_ref(1) = -0.3; // Y reference
+        // EE_vel_ref(0) = 0; // X velocity reference
+        // EE_vel_ref(1) = 0; // Y velocity reference
+
+        accl_d(0) = 8;
+        accl_d(1) = 0;
 
     }
     else{
+        
         ref_state(0) = 0.0; // forward position
         ref_state(1) = 0.0; // yaw
+        
+        EE_pos_ref(0) = 0.3; // X reference
+        EE_pos_ref(1) = 0.0; // Y reference
+        EE_vel_ref(0) = 0; // X velocity reference
+        EE_vel_ref(1) = 0; // Y velocity reference
+
+        accl_d(0) = 0;
+        accl_d(1) = 0;
     }
     
     knee_ref.data = 0*2.0*abs(sin(0.3*ros::Time::now().toSec()));
